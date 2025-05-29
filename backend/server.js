@@ -34,3 +34,6 @@ app.use('/api/decisions', decisionRoutes);
 
 const mindsetRoutes = require('./routes/mindsetRoutes');
 app.use('/api/mindset', mindsetRoutes);
+
+const prosConsRoutes = require('./routes/prosConsRoutes');
+app.use('/api/proscons', prosConsRoutes);
