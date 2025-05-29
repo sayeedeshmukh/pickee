@@ -1,26 +1,36 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Middlewares
 app.use(express.json());
+app.use(cors());
 
-// Routes
-const decisionRoutes = require('./routes/decisions');
-app.use('/api/decisions', decisionRoutes);
+// Routes (will add later)
+app.get('/', (req, res) => {
+  res.send('Welcome to Pickee API!');
+});
 
-// Connect to MongoDB
+// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB Connected'))
-.catch(err => console.error(err));
-
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  useUnifiedTopology: true,
+}).then(() => {
+  console.log(' Connected to MongoDB');
+  app.listen(5000, () => {
+    console.log(' Server running on http://localhost:5000');
 });
+}).catch((err) => {
+  console.error(' MongoDB connection failed:', err.message);
+});
+
+const decisionRoutes = require('./routes/decisionRoutes');
+app.use('/api/decisions', decisionRoutes);
+
+const mindsetRoutes = require('./routes/mindsetRoutes');
+app.use('/api/mindset', mindsetRoutes);
