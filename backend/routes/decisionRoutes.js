@@ -8,3 +8,10 @@ router.post('/', createDecision);
 router.get('/:id', getDecision);
 
 module.exports = router;
+
+
+const { getDecisionAnalysis } = require('../controllers/analysisController');
+
+router.get('/:id/analysis', getDecisionAnalysis);
+
+module.exports = router;
