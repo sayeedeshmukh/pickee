@@ -8,8 +8,6 @@ body{
 .layout{
     display: flex;
     align-items: center; 
-  
-
 }
 
 nav{
@@ -21,8 +19,31 @@ nav{
     align-self: center;
     display: flex;
     flex-direction: column;
-    padding:30px 15px 30px 15px ;
+    padding:30px 15px;
     gap: 40px;
+}
+
+.navLinks{
+    display: block;
+    text-decoration: none;
+    color: #262C38;
+    font-family: 'Lexend Deca', sans-serif;
+    transition: all 0.3s ease;
+    writing-mode: horizontal-tb;
+}
+
+.navLinks.active {
+    background-color:#48bac4;
+    font-family: "Limelight", sans-serif;
+    color: #262C38;
+    padding: 12px 12px 0 12px;
+    text-align: center;
+    letter-spacing: 20px;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .brandName{
@@ -39,12 +60,17 @@ a{
 }
 
 .navItems{
-    padding-right: 40px;
+    margin-right: 40px;
     display: flex;
     gap: 100px;
     flex-direction: column;
     margin-top: 40px;
     text-align: right;
+}
+
+.navItems.active{
+    padding: 0;
+    
 }
 
 .topText{
@@ -82,7 +108,7 @@ a{
 
 .ctaBox{
     border-radius: 25px;
-    margin-top: 120px;
+    margin-top: 70px;
     height: 260px;
     width: 900px;
     background-color: #FFF7E2;
@@ -115,7 +141,7 @@ a{
 
 .barrioHigh{
     text-align: center;
-    width: 500px;
+    width: 200px;
     position: relative;
     font-family: 'Barrio', sans-serif;
     font-size: 40px;
@@ -123,6 +149,6 @@ a{
     transform: rotate(-17deg);
     margin: 0;
     padding: 0;
-    left: 57%;
-    top: 20%;
+    left: 80%;
+    top: 10%;
 }

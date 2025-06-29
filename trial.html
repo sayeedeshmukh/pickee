@@ -8,17 +8,19 @@
     <link href="https://fonts.cdnfonts.com/css/limelight" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/lexend-deca" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/barrio" rel="stylesheet">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
     <div class="layout">
     <nav>
         <div class="brandName">orica</div>
-        <div class="navItems">
-            <a href="home" class="navLinks">home</a>
-            <a href="decide" class="navLinks">decide</a>
+        <div class="navItems active">
+            <a href="/" class="navLinks home">home</a>
+            <a href="decideTrial.html" class="navLinks">decide</a>
             <a href="about" class="navLinks">about us</a>
         </div>
     </nav>
+    <main>
     <div class="bodyLayout">
         <div class="ctaText">
         <div class="topText">This is <span class="highlightOrica">Orica</span></div>
@@ -31,6 +33,27 @@
             <img src="Group 8.png" alt="">
         </div>
     </div>
+    </main>
     </div>
+    <script>
+    const navLinks = document.querySelectorAll('.navLinks');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function () {
+            navLinks.forEach(l => {
+                l.classList.remove('active');
+                l.innerHTML = l.dataset.original;
+            });
+
+            this.classList.add('active');
+
+        });
+        });
+
+    navLinks.forEach(link => {
+        link.setAttribute('data-original', link.textContent.trim());
+    });
+    </script>
+
 </body>
 </html>

@@ -2,3 +2,16 @@
 @import url('https://fonts.cdnfonts.com/css/limelight-3');
 @import url('https://fonts.cdnfonts.com/css/lexend-deca');
 
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #fdfdfd;
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+
+input, select, button {
+  margin: 0.5rem;
+  padding: 0.4rem;
+  font-size: 1rem;
+}
