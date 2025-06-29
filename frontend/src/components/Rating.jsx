@@ -1,4 +1,4 @@
-import { FaStar } from 'react-icons/fa'
+import { FaStar } from 'react-icons/fa';
 
 export default function Rating({ value, onChange, readOnly = false }) {
   const stars = Array(5).fill(0)

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { getDecision, getMindset, getDecisionAnalysis } from '../services/api' // Removed getProsConsByDecision
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { getDecision, getMindset, getDecisionAnalysis } from '../services/api' 
 
 export default function Results() {
   const { id: decisionId } = useParams()

@@ -1,10 +1,9 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CreateDecision from './pages/CreateDecision';
 import RateReason from './pages/RateReason';
 import Results from './pages/Results';
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (

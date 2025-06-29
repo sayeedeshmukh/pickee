@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { createMindset } from '../services/api'
-import { toast } from 'react-hot-toast'
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { createMindset } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 export default function MindsetForm() {
   const { id: decisionId } = useParams()

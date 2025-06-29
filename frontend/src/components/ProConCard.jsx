@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import Rating from './Rating'
-import { addProsCons } from '../services/api'
-import { toast } from 'react-hot-toast'
+import { useState } from 'react';
+import Rating from './Rating';
+import { addProsCons } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 export default function ProConCard({ item, decisionId, onUpdate }) {
   const [rating, setRating] = useState(item.rating || 5)

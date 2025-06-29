@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import ProConCard from '../components/ProConCard'
-import { getDecision, getProsConsByDecision, addProsCons } from '../services/api' // Added addProsCons import
-import { toast } from 'react-hot-toast'
-import Rating from '../components/Rating'
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import ProConCard from '../components/ProConCard';
+import { getDecision, getProsConsByDecision, addProsCons } from '../services/api'; // Added addProsCons import
+import { toast } from 'react-hot-toast';
+import Rating from '../components/Rating';
 
 export default function RateReason() {
   const { id: decisionId } = useParams()

@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { createDecision } from '../services/api'
-import { toast } from 'react-hot-toast'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createDecision } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 export default function DecisionForm({ onDecisionCreated }) {
   const [formData, setFormData] = useState({

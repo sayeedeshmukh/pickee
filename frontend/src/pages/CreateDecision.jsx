@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import DecisionForm from '../components/DecisionForm'
-import { generateProsCons, getDecision } from '../services/api'
-import { toast } from 'react-hot-toast'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import DecisionForm from '../components/DecisionForm';
+import { generateProsCons, getDecision } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 export default function CreateDecision() {
   const navigate = useNavigate()
