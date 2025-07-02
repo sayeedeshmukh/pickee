@@ -1,0 +1,7 @@
+const express = require('express');
+const router = express.Router();
+const { generateProsCons } = require('../controllers/aiController');
+
+router.post('/generate-pros-cons', generateProsCons);
+
+module.exports = router;

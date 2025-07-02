@@ -11,6 +11,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const aiRoutes = require('./routes/aiRoutes');
+app.use('/api/ai', aiRoutes);
+
+
+
 // Routes (will add later)
 app.get('/', (req, res) => {
   res.send('Welcome to Pickee API!');
