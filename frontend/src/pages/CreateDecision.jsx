@@ -1,31 +1,34 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DecisionForm from '../components/DecisionForm';
-import { generateProsCons, getDecision } from '../services/api';
+import { getDecision, generateProsConsOR } from '../services/api'; // changed
 import { toast } from 'react-hot-toast';
 
 export default function CreateDecision() {
-  const navigate = useNavigate()
-  const [isGenerating, setIsGenerating] = useState(false)
+  const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDecisionCreated = async (decisionId) => {
-    setIsGenerating(true)
+    setIsGenerating(true);
     try {
-      const decision = await getDecision(decisionId)
-      await generateProsCons(decisionId, {
+      const response = await getDecision(decisionId);
+      const decision = response.data;
+
+      await generateProsConsOR({ // changed
         optionA: decision.optionA.title,
         optionB: decision.optionB.title,
-      })
-      toast.success('AI-generated pros/cons created!')
-      navigate(`/decisions/${decisionId}/rate`)
+      });
+
+      toast.success('Pros/cons generated with OpenRouter!');
+      navigate(`/decisions/${decisionId}/rate`);
     } catch (error) {
-      toast.error('AI generation failed, but you can add pros/cons manually')
-      console.error('AI generation error:', error) // Added error logging
-      navigate(`/decisions/${decisionId}/rate`)
+      toast.error('OpenRouter generation failed, but you can add pros/cons manually');
+      console.error('OpenRouter error:', error);
+      navigate(`/decisions/${decisionId}/rate`);
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
@@ -33,9 +36,9 @@ export default function CreateDecision() {
       <DecisionForm onDecisionCreated={handleDecisionCreated} />
       {isGenerating && (
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <p className="text-blue-700">Generating AI suggestions...</p>
+          <p className="text-blue-700">Generating suggestions with OpenRouter AI...</p>
         </div>
       )}
     </div>
-  )
+  );
 }

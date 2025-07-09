@@ -1,44 +1,30 @@
-const { Configuration, OpenAIApi } = require('openai');
+const axios = require('axios');
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+const askLlama = async (req, res) => {
+  const userPrompt = req.body.prompt;
 
-exports.generateProsCons = async (req, res) => {
   try {
-    const { decisionId, optionA, optionB } = req.body;
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'nvidia/llama-3.3-nemotron-super-49b-v1:free',
+        messages: [{ role: 'user', content: userPrompt }],
+      },
+      {
+        headers: {
+          'Authorization': `Bearer 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`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://orica.example.com',
+          'X-Title': 'Orica',
+        },
+      }
+    );
 
-    const prompt = `Generate pros and cons for two options:\n
-Option A: ${optionA}
-Option B: ${optionB}
-
-Return them in this format:
-Option A:
-Pros:
--
-Cons:
--
-
-Option B:
-Pros:
--
-Cons:
--`;
-
-    const completion = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    });
-
-    const result = completion.data.choices[0].message.content;
-
-    // Optional: You can save pros/cons to DB using decisionId here
-
-    res.status(200).json({ success: true, result });
-  } catch (err) {
-    console.error("OpenAI error:", err.message);
-    res.status(500).json({ success: false, error: "AI generation failed" });
+    res.json(response.data.choices[0].message);
+  } catch (error) {
+    console.error('OpenRouter error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to get response from model' });
   }
 };
+
+module.exports = { askLlama };

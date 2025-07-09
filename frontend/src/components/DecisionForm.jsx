@@ -24,21 +24,27 @@ export default function DecisionForm({ onDecisionCreated }) {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    try {
-      const response = await createDecision(formData)
-      toast.success('Decision created!')
-      if (onDecisionCreated) {
-        onDecisionCreated(response.data._id)
-      } else {
-        navigate(`/decisions/${response.data._id}/rate`)
-      }
-    } catch (error) {
-      toast.error('Failed to create decision')
-      console.error(error)
+ const handleSubmit = async (e) => {
+  e.preventDefault()
+  try {
+    console.log("📤 Submitting decision form with:", formData)
+
+    const response = await createDecision(formData)
+    console.log("✅ Decision created:", response.data)
+
+    toast.success('Decision created!')
+    if (onDecisionCreated) {
+      console.log("➡️ Triggering onDecisionCreated with ID:", response.data._id)
+      onDecisionCreated(response.data._id)
+    } else {
+      navigate(`/decisions/${response.data._id}/rate`)
     }
+  } catch (error) {
+    toast.error('Failed to create decision')
+    console.error("🚨 Error creating decision:", error)
   }
+}
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

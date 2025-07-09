@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
-import { getDecision, getProsConsByDecision, addProsCons } from '../services/api';
+import { getDecision, getProsConsByDecision, addProsCons, generateProsConsHF } from '../services/api';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -11,22 +11,19 @@ export default function RateReason() {
   const [decision, setDecision] = useState(null);
   const [prosCons, setProsCons] = useState([]);
   const [activeTab, setActiveTab] = useState('A');
-  const [newItem, setNewItem] = useState({ 
-    text: '', 
-    type: 'pro', 
-    rating: 5 
-  });
+  const [newItem, setNewItem] = useState({ text: '', type: 'pro', rating: 5 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hfSuggestions, setHfSuggestions] = useState([]);
+  const [loadingHF, setLoadingHF] = useState(false);
 
-  // Fetch decision and pros/cons data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const [decisionRes, prosConsRes] = await Promise.all([
           getDecision(decisionId),
-          getProsConsByDecision(decisionId)
+          getProsConsByDecision(decisionId),
         ]);
         setDecision(decisionRes.data);
         setProsCons(prosConsRes.data);
@@ -41,7 +38,6 @@ export default function RateReason() {
     fetchData();
   }, [decisionId]);
 
-  // Handle adding new pro/con
   const handleAddNew = async () => {
     if (!newItem.text.trim()) {
       toast.error('Please enter your reasoning');
@@ -61,8 +57,7 @@ export default function RateReason() {
 
       toast.success('Added successfully!');
       setNewItem({ text: '', type: 'pro', rating: 5 });
-      
-      // Refresh the pros/cons list
+
       const res = await getProsConsByDecision(decisionId);
       setProsCons(res.data);
     } catch (error) {
@@ -73,8 +68,44 @@ export default function RateReason() {
     }
   };
 
-  // Filter pros/cons for active tab
-  const filteredProsCons = prosCons.filter(item => item.option === activeTab);
+  const loadHFSuggestions = async () => {
+    if (!decision) return;
+
+    setLoadingHF(true);
+    try {
+      const suggestions = await generateProsConsHF({
+        optionA: decision.optionA.title,
+        optionB: decision.optionB.title,
+      });
+
+      const activeOption = `option${activeTab}`;
+      const formatted = [
+        ...(suggestions?.[activeOption]?.pros?.map((text) => ({
+          text,
+          type: 'pro',
+          rating: 7,
+          option: activeTab,
+          source: 'ai-hf',
+        })) || []),
+        ...(suggestions?.[activeOption]?.cons?.map((text) => ({
+          text,
+          type: 'con',
+          rating: 7,
+          option: activeTab,
+          source: 'ai-hf',
+        })) || []),
+      ];
+
+      setHfSuggestions(formatted);
+    } catch (error) {
+      toast.error('Failed to load AI suggestions');
+      console.error('Hugging Face Error:', error);
+    } finally {
+      setLoadingHF(false);
+    }
+  };
+
+  const filteredProsCons = prosCons.filter((item) => item.option === activeTab);
 
   if (isLoading) {
     return (
@@ -88,8 +119,8 @@ export default function RateReason() {
     return (
       <div className="text-center py-8">
         <p className="text-red-500">Failed to load decision data</p>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          onClick={() => window.location.reload()}
           className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
         >
           Retry
@@ -105,14 +136,15 @@ export default function RateReason() {
         <p className="text-gray-600">Rate the pros and cons for each option to help make your decision</p>
       </header>
 
-      {/* Option tabs */}
       <div className="flex mb-6 border-b">
         {['A', 'B'].map((option) => (
           <button
             key={option}
-            className={`px-4 py-2 font-medium transition-colors ${activeTab === option 
-              ? 'border-b-2 border-indigo-500 text-indigo-600' 
-              : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === option
+                ? 'border-b-2 border-indigo-500 text-indigo-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
             onClick={() => setActiveTab(option)}
           >
             {decision[`option${option}`].title}
@@ -120,29 +152,78 @@ export default function RateReason() {
         ))}
       </div>
 
-      {/* Add new pro/con form */}
+      <div className="mb-6">
+        <button
+          onClick={loadHFSuggestions}
+          disabled={loadingHF || !decision}
+          className={`w-full py-2 rounded-md text-white ${
+            loadingHF || !decision
+              ? 'bg-blue-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {loadingHF ? 'Loading Hugging Face Suggestions...' : 'Get Hugging Face Suggestions'}
+        </button>
+      </div>
+
+      {hfSuggestions.length > 0 && (
+        <section className="mb-8 bg-blue-50 rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Hugging Face Suggestions</h2>
+          <div className="space-y-3">
+            {hfSuggestions.map((item, index) => (
+              <div
+                key={index}
+                className={`p-3 rounded-lg ${item.type === 'pro' ? 'bg-green-100' : 'bg-red-100'}`}
+              >
+                <p className="font-medium">{item.text}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <Rating value={item.rating} readOnly />
+                  <button
+                    onClick={() => {
+                      setNewItem({
+                        text: item.text,
+                        type: item.type,
+                        rating: item.rating,
+                      });
+                      setHfSuggestions((prev) => prev.filter((_, i) => i !== index));
+                    }}
+                    className="text-sm text-indigo-600 hover:text-indigo-800"
+                  >
+                    Use This
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="mb-8 bg-white rounded-lg shadow-md p-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">Add New Consideration</h2>
-        
+
         <div className="flex space-x-2 mb-4">
           <button
-            className={`px-4 py-2 rounded-lg transition-colors ${newItem.type === 'pro' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              newItem.type === 'pro'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
             onClick={() => setNewItem({ ...newItem, type: 'pro' })}
           >
             Pro
           </button>
           <button
-            className={`px-4 py-2 rounded-lg transition-colors ${newItem.type === 'con' 
-              ? 'bg-red-100 text-red-800' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              newItem.type === 'con'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
             onClick={() => setNewItem({ ...newItem, type: 'con' })}
           >
             Con
           </button>
         </div>
-        
+
         <textarea
           value={newItem.text}
           onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
@@ -150,36 +231,37 @@ export default function RateReason() {
           placeholder={`Why is this a ${newItem.type} for ${decision[`option${activeTab}`].title}?`}
           rows={3}
         />
-        
+
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center">
             <span className="mr-2 text-sm text-gray-600">Importance:</span>
-            <Rating 
-              value={newItem.rating} 
-              onChange={(val) => setNewItem({ ...newItem, rating: val })} 
+            <Rating
+              value={newItem.rating}
+              onChange={(val) => setNewItem({ ...newItem, rating: val })}
             />
           </div>
-          
+
           <button
             onClick={handleAddNew}
             disabled={isSubmitting || !newItem.text.trim()}
-            className={`px-4 py-2 rounded-lg text-white ${isSubmitting || !newItem.text.trim() 
-              ? 'bg-indigo-400 cursor-not-allowed' 
-              : 'bg-indigo-600 hover:bg-indigo-700'}`}
+            className={`px-4 py-2 rounded-lg text-white ${
+              isSubmitting || !newItem.text.trim()
+                ? 'bg-indigo-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700'
+            }`}
           >
             {isSubmitting ? 'Adding...' : 'Add Consideration'}
           </button>
         </div>
       </section>
 
-      {/* Existing pros/cons list */}
       <section>
         <h2 className="text-lg font-semibold mb-4 text-gray-800">
-          {filteredProsCons.length > 0 
-            ? 'Your Considerations' 
+          {filteredProsCons.length > 0
+            ? 'Your Considerations'
             : 'No considerations yet. Add your first one above!'}
         </h2>
-        
+
         <div className="space-y-3">
           {filteredProsCons.map((item) => (
             <ProConCard
@@ -195,7 +277,6 @@ export default function RateReason() {
         </div>
       </section>
 
-      {/* Continue button */}
       <div className="mt-8 flex justify-end">
         <button
           onClick={() => navigate(`/decisions/${decisionId}/mindset`)}
@@ -203,7 +284,6 @@ export default function RateReason() {
         >
           Continue to Mindset Assessment
         </button>
-        
       </div>
     </div>
   );
