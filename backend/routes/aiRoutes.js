@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { askLlama } = require('../controllers/aiController');
+const { getGeminiProsCons, getGeminiDecisionAnalysis } = require('../controllers/aiController');
 
-router.post('/ask-llama', askLlama);
+
+router.post('/generate-pros-cons-gemini', getGeminiProsCons);
+
+router.get('/decision-analysis-gemini/:decisionId', getGeminiDecisionAnalysis); 
 
 module.exports = router;

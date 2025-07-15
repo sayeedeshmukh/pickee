@@ -1,30 +1,52 @@
-const axios = require('axios');
+const { generateProsCons, generateEfficientChoice } = require('../utils/aiService');
+const Decision = require('../models/Decision'); 
+const ProsCons = require('../models/ProsCons'); 
+const Mindset = require('../models/Mindset'); 
 
-const askLlama = async (req, res) => {
-  const userPrompt = req.body.prompt;
+// This controller will handle the request for generating initial pros/cons
+const getGeminiProsCons = async (req, res) => {
+  const { optionA, optionB } = req.body;
+
+  if (!optionA || !optionB) {
+    return res.status(400).json({ error: 'Option A and Option B are required.' });
+  }
 
   try {
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: 'nvidia/llama-3.3-nemotron-super-49b-v1:free',
-        messages: [{ role: 'user', content: userPrompt }],
-      },
-      {
-        headers: {
-          'Authorization': `Bearer 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`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://orica.example.com',
-          'X-Title': 'Orica',
-        },
-      }
-    );
-
-    res.json(response.data.choices[0].message);
+    const suggestions = await generateProsCons(optionA, optionB);
+    res.json(suggestions);
   } catch (error) {
-    console.error('OpenRouter error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to get response from model' });
+    console.error('Error in getGeminiProsCons controller:', error);
+    res.status(500).json({ error: 'Failed to generate pros and cons from Gemini.' });
   }
 };
 
-module.exports = { askLlama };
+const getGeminiDecisionAnalysis = async (req, res) => {
+  const { decisionId } = req.params;
+
+  try {
+    const decision = await Decision.findById(decisionId);
+    if (!decision) {
+      return res.status(404).json({ error: 'Decision not found.' });
+    }
+
+    const prosCons = await ProsCons.find({ decisionId });
+    const mindset = await Mindset.findOne({ decisionId }); // Assuming mindset is unique per decision
+
+    if (!prosCons || prosCons.length === 0) {
+      return res.status(400).json({ error: 'No pros and cons found for this decision. Please add some first.' });
+    }
+
+    const analysis = await generateEfficientChoice(decision, prosCons, mindset);
+    res.json(analysis);
+
+  } catch (error) {
+    console.error('Error in getGeminiDecisionAnalysis controller:', error);
+    res.status(500).json({ error: 'Failed to generate decision analysis from Gemini.' });
+  }
+};
+
+
+module.exports = {
+  getGeminiProsCons,
+  getGeminiDecisionAnalysis,
+};

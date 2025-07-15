@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
-import { getDecision, getProsConsByDecision, addProsCons, generateProsConsHF } from '../services/api';
+import { getDecision, getProsConsByDecision, addProsCons, generateProsConsGemini } from '../services/api';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -14,8 +14,10 @@ export default function RateReason() {
   const [newItem, setNewItem] = useState({ text: '', type: 'pro', rating: 5 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hfSuggestions, setHfSuggestions] = useState([]);
-  const [loadingHF, setLoadingHF] = useState(false);
+
+  const [geminiSuggestions, setGeminiSuggestions] = useState([]);
+
+  const [loadingGemini, setLoadingGemini] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,40 +70,41 @@ export default function RateReason() {
     }
   };
 
-  const loadHFSuggestions = async () => {
+
+  const loadGeminiSuggestions = async () => {
     if (!decision) return;
 
-    setLoadingHF(true);
+    setLoadingGemini(true); 
     try {
-      const suggestions = await generateProsConsHF({
+      const suggestions = await generateProsConsGemini({
         optionA: decision.optionA.title,
         optionB: decision.optionB.title,
       });
 
-      const activeOption = `option${activeTab}`;
+      const activeOption = `option${activeTab.toLowerCase()}`; 
       const formatted = [
         ...(suggestions?.[activeOption]?.pros?.map((text) => ({
           text,
           type: 'pro',
-          rating: 7,
+          rating: 5, 
           option: activeTab,
-          source: 'ai-hf',
+          source: 'ai-gemini',
         })) || []),
         ...(suggestions?.[activeOption]?.cons?.map((text) => ({
           text,
           type: 'con',
-          rating: 7,
+          rating: 5, 
           option: activeTab,
-          source: 'ai-hf',
+          source: 'ai-gemini', 
         })) || []),
       ];
 
-      setHfSuggestions(formatted);
+      setGeminiSuggestions(formatted); 
     } catch (error) {
-      toast.error('Failed to load AI suggestions');
-      console.error('Hugging Face Error:', error);
+      toast.error('Failed to load AI suggestions from Gemini'); 
+      console.error('Gemini Suggestion Error:', error); 
     } finally {
-      setLoadingHF(false);
+      setLoadingGemini(false); 
     }
   };
 
@@ -154,23 +157,23 @@ export default function RateReason() {
 
       <div className="mb-6">
         <button
-          onClick={loadHFSuggestions}
-          disabled={loadingHF || !decision}
+          onClick={loadGeminiSuggestions} 
+          disabled={loadingGemini || !decision} 
           className={`w-full py-2 rounded-md text-white ${
-            loadingHF || !decision
+            loadingGemini || !decision
               ? 'bg-blue-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {loadingHF ? 'Loading Hugging Face Suggestions...' : 'Get Hugging Face Suggestions'}
+          {loadingGemini ? 'Loading Gemini Suggestions...' : 'Get Gemini Suggestions'} 
         </button>
       </div>
 
-      {hfSuggestions.length > 0 && (
+      {geminiSuggestions.length > 0 && ( 
         <section className="mb-8 bg-blue-50 rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">Hugging Face Suggestions</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Gemini Suggestions</h2> 
           <div className="space-y-3">
-            {hfSuggestions.map((item, index) => (
+            {geminiSuggestions.map((item, index) => ( 
               <div
                 key={index}
                 className={`p-3 rounded-lg ${item.type === 'pro' ? 'bg-green-100' : 'bg-red-100'}`}
@@ -185,7 +188,7 @@ export default function RateReason() {
                         type: item.type,
                         rating: item.rating,
                       });
-                      setHfSuggestions((prev) => prev.filter((_, i) => i !== index));
+                      setGeminiSuggestions((prev) => prev.filter((_, i) => i !== index)); 
                     }}
                     className="text-sm text-indigo-600 hover:text-indigo-800"
                   >
