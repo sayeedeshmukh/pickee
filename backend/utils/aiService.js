@@ -1,165 +1,177 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-require('dotenv').config(); 
+require('dotenv').config();
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
   console.error("GEMINI_API_KEY is not set in environment variables.");
-  // throwing an error or handling this more robustly in production
+  throw new Error("GEMINI_API_KEY is missing. Please set it in your .env file.");
 }
 
-// Initialize 
 const genAI = new GoogleGenerativeAI(API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// For text-only input, use the gemini-pro model
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+function extractJsonFromString(text) {
+  const markdownMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  if (markdownMatch && markdownMatch[1]) {
+    return markdownMatch[1].trim();
+  }
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch && jsonMatch[0]) {
+    return jsonMatch[0].trim();
+  }
+  return null;
+}
 
-// Function to generate pros and cons for two options
 async function generateProsCons(optionA, optionB) {
   try {
     const prompt = `Act as a professional decision-making assistant. Compare these two options and generate 3 high-quality pros and 3 high-quality cons for each:
     Option A: ${optionA}
     Option B: ${optionB}
-
+    
     Requirements:
     - Be specific and concrete
     - Avoid generic statements
     - Consider both short-term and long-term impacts
     - Include potential risks and opportunities
-    - Format as valid JSON exactly like this:
+    - Format as valid JSON exactly like this (ensure all keys are present, even if arrays are empty):
     {
-      "optionA": {
+      "optionA": { 
         "pros": ["specific pro 1", "specific pro 2", "specific pro 3"],
-        "cons": ["specific con 1", "specific con 2", "specific con 3"]
+        "cons": ["specific con 1", "specific con 2", "specific con 3"] 
       },
       "optionB": {
         "pros": ["specific pro 1", "specific pro 2", "specific pro 3"],
         "cons": ["specific con 1", "specific con 2", "specific con 3"]
       }
     }`;
-
-
-    const result = await model.generateContent(prompt);
+    
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 800,
+      },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      ],
+    });
+    
     const response = await result.response;
-    const text = response.text();
+    const rawText = response.text();
 
-    // Gemini might wrap JSON in markdown, so we need to extract it
-    const jsonString = text.replace(/```json\n|\n```/g, '').trim();
-
-    const parsedResult = JSON.parse(jsonString);
-
-    if (!parsedResult.optionA || !parsedResult.optionB) {
-      throw new Error("Invalid AI response format from Gemini");
+    const jsonString = extractJsonFromString(rawText);
+    if (!jsonString) {
+      throw new Error("Could not extract valid JSON from Gemini response.");
     }
 
+    const parsedResult = JSON.parse(jsonString);
+    
+    if (!parsedResult.optionA || !Array.isArray(parsedResult.optionA.pros) || !Array.isArray(parsedResult.optionA.cons) ||
+        !parsedResult.optionB || !Array.isArray(parsedResult.optionB.pros) || !Array.isArray(parsedResult.optionB.cons)) {
+      throw new Error("Invalid AI response format: missing expected properties or arrays.");
+    }
+    
     return parsedResult;
   } catch (error) {
     console.error('Gemini generateProsCons error:', error);
     return {
       optionA: {
         pros: [
-          "Benefit for Option A (AI failed to generate)",
-          "Another benefit for Option A (AI failed to generate)",
-          "A third benefit for Option A (AI failed to generate)"
+          "AI could not generate specific pros for Option A.",
+          "Consider its benefits related to your goals."
         ],
         cons: [
-          "Drawback for Option A (AI failed to generate)",
-          "Another drawback for Option A (AI failed to generate)",
-          "A third drawback for Option A (AI failed to generate)"
+          "AI could not generate specific cons for Option A.",
+          "Think about potential drawbacks."
         ]
       },
       optionB: {
         pros: [
-          "Benefit for Option B (AI failed to generate)",
-          "Another benefit for Option B (AI failed to generate)",
-          "A third benefit for Option B (AI failed to generate)"
+          "AI could not generate specific pros for Option B.",
+          "Consider its benefits related to your goals."
         ],
         cons: [
-          "Drawback for Option B (AI failed to generate)",
-          "Another drawback for Option B (AI failed to generate)",
-          "A third drawback for Option B (AI failed to generate)"
+          "AI could not generate specific cons for Option B.",
+          "Think about potential drawbacks."
         ]
       }
     };
   }
 }
 
-// Function to generate the efficient choice based on pros, cons, and user ratings
-async function generateEfficientChoice(decision, prosCons, mindset) {
+// Renamed getGeminiSummary to generateEfficientChoice for consistency
+async function generateEfficientChoice(decisionData, prosConsData, mindsetData) {
   try {
-    let proConDetails = '';
-    const optionAPros = prosCons.filter(item => item.option === 'A' && item.type === 'pro');
-    const optionACons = prosCons.filter(item => item.option === 'A' && item.type === 'con');
-    const optionBPros = prosCons.filter(item => item.option === 'B' && item.type === 'pro');
-    const optionBCons = prosCons.filter(item => item.option === 'B' && item.type === 'con');
+    const prompt = `Given the following decision and its pros/cons, provide an objective analysis focusing on strengths of the recommended option and overall considerations.
+    
+    Decision:
+    Option A: ${decisionData.optionA.title}
+    Pros for Option A: ${prosConsData.filter(pc => pc.option === 'A' && pc.type === 'pro').map(pc => pc.text).join(', ') || 'None'}
+    Cons for Option A: ${prosConsData.filter(pc => pc.option === 'A' && pc.type === 'con').map(pc => pc.text).join(', ') || 'None'}
 
-    proConDetails += `Option A: ${decision.optionA.title}\n`;
-    proConDetails += '  Pros:\n';
-    optionAPros.forEach(p => proConDetails += `    - ${p.text} (Importance: ${p.rating}/5)\n`);
-    proConDetails += '  Cons:\n';
-    optionACons.forEach(c => proConDetails += `    - ${c.text} (Importance: ${c.rating}/5)\n`);
+    Option B: ${decisionData.optionB.title}
+    Pros for Option B: ${prosConsData.filter(pc => pc.option === 'B' && pc.type === 'pro').map(pc => pc.text).join(', ') || 'None'}
+    Cons for Option B: ${prosConsData.filter(pc => pc.option === 'B' && pc.type === 'con').map(pc => pc.text).join(', ') || 'None'}
 
-    proConDetails += `\nOption B: ${decision.optionB.title}\n`;
-    proConDetails += '  Pros:\n';
-    optionBPros.forEach(p => proConDetails += `    - ${p.text} (Importance: ${p.rating}/5)\n`);
-    proConDetails += '  Cons:\n';
-    optionBCons.forEach(c => proConDetails += `    - ${c.text} (Importance: ${c.rating}/5)\n`);
+    ${mindsetData ? `Mindset considerations: ${mindsetData.description}` : ''}
 
-    const mindsetDetails = mindset ?
-      `\nUser's Mindset:
-      - Clarity Level: ${mindset.clarityLevel}
-      - Fear of Regret: ${mindset.fearOfRegret}
-      - Emotional Attachment: ${mindset.emotionalAttachment}
-      - Practical Approach: ${mindset.practicalApproach}
-      - Notes: ${mindset.notes || 'None'}`
-      : '';
-
-    const prompt = `You are a highly intelligent and unbiased decision-making AI.
-    Analyze the following two options, their pros and cons, and the user's importance ratings (1-5, where 5 is most important).
-    Also consider the user's mindset assessment to provide a holistic recommendation.
-
-    ${proConDetails}
-    ${mindsetDetails}
-
-    Based on all the provided information, including the importance ratings and the user's mindset, determine which option is the most efficient and logical choice for the user.
-    Provide a comprehensive analysis including:
-    1. A clear recommendation for either Option A or Option B, or state if it's a balanced choice.
-    2. A detailed summary explaining your recommendation, highlighting how the user's ratings and mindset influenced it.
-    3. Key strengths of the recommended option based on the user's priorities.
-    4. Key considerations or potential challenges for the recommended option.
-
-    Format your output as a valid JSON object like this:
+    Based on these, recommend one option and provide a concise summary, listing key strengths of the recommended option and overall considerations.
+    Format as valid JSON exactly like this:
     {
-      "recommendedOption": "A" | "B" | "Balanced",
-      "summary": "Your detailed explanation and reasoning here...",
-      "strengths": ["list of strengths based on user priorities"],
-      "considerations": ["list of potential challenges or points to consider"]
+      "recommendedOption": "Option A Title" or "Option B Title",
+      "summary": "A concise summary of the analysis.",
+      "strengths": ["Strength 1", "Strength 2"],
+      "considerations": ["Consideration 1", "Consideration 2"]
     }`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.5,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 800,
+      },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      ],
+    });
 
-    const jsonString = text.replace(/```json\n|\n```/g, '').trim();
+    const response = await result.response;
+    const rawText = response.text();
+
+    const jsonString = extractJsonFromString(rawText);
+    if (!jsonString) {
+      throw new Error("Could not extract valid JSON from Gemini summary response.");
+    }
     const parsedResult = JSON.parse(jsonString);
 
-    if (!parsedResult.recommendedOption || !parsedResult.summary) {
-      throw new Error("Invalid AI analysis response format from Gemini");
+    if (!parsedResult.recommendedOption || !parsedResult.summary || !Array.isArray(parsedResult.strengths) || !Array.isArray(parsedResult.considerations)) {
+      throw new Error("Invalid Gemini summary response format.");
     }
 
     return parsedResult;
+
   } catch (error) {
     console.error('Gemini generateEfficientChoice error:', error);
     return {
-      recommendedOption: "Undetermined",
-      summary: "AI analysis failed to generate. Please try again or provide more input.",
-      strengths: [],
-      considerations: []
+      recommendedOption: "No recommendation available",
+      summary: "AI analysis could not be generated at this time.",
+      strengths: ["N/A"],
+      considerations: ["N/A"]
     };
   }
 }
 
-module.exports = {
-  generateProsCons,
-  generateEfficientChoice, 
-};
+module.exports = { generateProsCons, generateEfficientChoice };

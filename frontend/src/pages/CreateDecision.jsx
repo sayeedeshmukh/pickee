@@ -14,17 +14,18 @@ export default function CreateDecision() {
       const response = await getDecision(decisionId);
       const decision = response.data;
 
-      // Call the new Gemini generation function
+      // Automatically generate AI suggestions
       await generateProsConsGemini({
         optionA: decision.optionA.title,
         optionB: decision.optionB.title,
+        decisionId: decisionId,
       });
 
-      toast.success('Pros/cons generated with Gemini!');
+      toast.success('Decision created with AI suggestions!');
       navigate(`/decisions/${decisionId}/rate`);
     } catch (error) {
-      toast.error('Gemini generation failed, but you can add pros/cons manually');
-      console.error('Gemini error:', error);
+      toast.error('Decision created, but AI generation failed. You can still add pros/cons manually.');
+      console.error('AI generation error:', error);
       navigate(`/decisions/${decisionId}/rate`);
     } finally {
       setIsGenerating(false);
@@ -32,14 +33,26 @@ export default function CreateDecision() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Create New Decision</h1>
-      <DecisionForm onDecisionCreated={handleDecisionCreated} />
-      {isGenerating && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <p className="text-blue-700">Generating suggestions with Gemini AI...</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-4">Create Your Decision</h1>
+          <p className="text-xl text-gray-300">Define your options and let AI help you analyze them</p>
         </div>
-      )}
+        
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
+          <DecisionForm onDecisionCreated={handleDecisionCreated} />
+        </div>
+        
+        {isGenerating && (
+          <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-600"></div>
+              <p className="text-purple-700 font-medium">Creating your decision and generating AI suggestions...</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

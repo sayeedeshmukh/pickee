@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
-import { getDecision, getProsConsByDecision, addProsCons, generateProsConsGemini } from '../services/api';
+import { getDecision, getProsConsByDecision, addProsCons, updateProsCons, deleteProsCons } from '../services/api';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -14,10 +14,6 @@ export default function RateReason() {
   const [newItem, setNewItem] = useState({ text: '', type: 'pro', rating: 5 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [geminiSuggestions, setGeminiSuggestions] = useState([]);
-
-  const [loadingGemini, setLoadingGemini] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,6 +56,7 @@ export default function RateReason() {
       toast.success('Added successfully!');
       setNewItem({ text: '', type: 'pro', rating: 5 });
 
+      // Refresh the list after adding
       const res = await getProsConsByDecision(decisionId);
       setProsCons(res.data);
     } catch (error) {
@@ -70,41 +67,24 @@ export default function RateReason() {
     }
   };
 
-
-  const loadGeminiSuggestions = async () => {
-    if (!decision) return;
-
-    setLoadingGemini(true); 
+  const handleRatingChange = async (itemId, newRating) => {
     try {
-      const suggestions = await generateProsConsGemini({
-        optionA: decision.optionA.title,
-        optionB: decision.optionB.title,
-      });
-
-      const activeOption = `option${activeTab.toLowerCase()}`; 
-      const formatted = [
-        ...(suggestions?.[activeOption]?.pros?.map((text) => ({
-          text,
-          type: 'pro',
-          rating: 5, 
-          option: activeTab,
-          source: 'ai-gemini',
-        })) || []),
-        ...(suggestions?.[activeOption]?.cons?.map((text) => ({
-          text,
-          type: 'con',
-          rating: 5, 
-          option: activeTab,
-          source: 'ai-gemini', 
-        })) || []),
-      ];
-
-      setGeminiSuggestions(formatted); 
+      if (newRating === 1) {
+        // Delete the item if rating is 1
+        await deleteProsCons(itemId);
+        toast.success('Item removed (rated 1 star)');
+      } else {
+        // Update the rating
+        await updateProsCons(itemId, { rating: newRating });
+        toast.success('Rating updated');
+      }
+      
+      // Refresh the list
+      const res = await getProsConsByDecision(decisionId);
+      setProsCons(res.data);
     } catch (error) {
-      toast.error('Failed to load AI suggestions from Gemini'); 
-      console.error('Gemini Suggestion Error:', error); 
-    } finally {
-      setLoadingGemini(false); 
+      toast.error('Failed to update rating');
+      console.error('Rating update error:', error);
     }
   };
 
@@ -112,181 +92,158 @@ export default function RateReason() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading your decision...</p>
+        </div>
       </div>
     );
   }
 
   if (!decision) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500">Failed to load decision data</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-        >
-          Retry
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400 text-lg mb-4">Failed to load decision data</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Evaluate Your Options</h1>
-        <p className="text-gray-600">Rate the pros and cons for each option to help make your decision</p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="max-w-6xl mx-auto py-8 px-4">
+        {/* Header */}
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-white mb-4">{decision.title}</h1>
+          <p className="text-xl text-gray-300">Rate the pros and cons for each option to help make your decision</p>
+        </header>
 
-      <div className="flex mb-6 border-b">
-        {['A', 'B'].map((option) => (
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 bg-white/10 backdrop-blur-md p-1 rounded-lg mb-8">
           <button
-            key={option}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === option
-                ? 'border-b-2 border-indigo-500 text-indigo-600'
-                : 'text-gray-500 hover:text-gray-700'
+            onClick={() => setActiveTab('A')}
+            className={`flex-1 py-3 px-6 rounded-md font-medium transition-colors ${
+              activeTab === 'A' ? 'bg-white text-gray-900 shadow-lg' : 'text-white hover:text-pink-300'
             }`}
-            onClick={() => setActiveTab(option)}
           >
-            {decision[`option${option}`].title}
+            Option A: {decision.optionA.title}
           </button>
-        ))}
-      </div>
+          <button
+            onClick={() => setActiveTab('B')}
+            className={`flex-1 py-3 px-6 rounded-md font-medium transition-colors ${
+              activeTab === 'B' ? 'bg-white text-gray-900 shadow-lg' : 'text-white hover:text-pink-300'
+            }`}
+          >
+            Option B: {decision.optionB.title}
+          </button>
+        </div>
 
-      <div className="mb-6">
-        <button
-          onClick={loadGeminiSuggestions} 
-          disabled={loadingGemini || !decision} 
-          className={`w-full py-2 rounded-md text-white ${
-            loadingGemini || !decision
-              ? 'bg-blue-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {loadingGemini ? 'Loading Gemini Suggestions...' : 'Get Gemini Suggestions'} 
-        </button>
-      </div>
-
-      {geminiSuggestions.length > 0 && ( 
-        <section className="mb-8 bg-blue-50 rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">Gemini Suggestions</h2> 
-          <div className="space-y-3">
-            {geminiSuggestions.map((item, index) => ( 
-              <div
-                key={index}
-                className={`p-3 rounded-lg ${item.type === 'pro' ? 'bg-green-100' : 'bg-red-100'}`}
+        {/* Add New Pro/Con Form */}
+        <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 mb-8 shadow-xl">
+          <h3 className="text-xl font-semibold text-white mb-4">Add Your Own Pro/Con</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
+              <select
+                value={newItem.type}
+                onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
               >
-                <p className="font-medium">{item.text}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <Rating value={item.rating} readOnly />
-                  <button
-                    onClick={() => {
-                      setNewItem({
-                        text: item.text,
-                        type: item.type,
-                        rating: item.rating,
-                      });
-                      setGeminiSuggestions((prev) => prev.filter((_, i) => i !== index)); 
-                    }}
-                    className="text-sm text-indigo-600 hover:text-indigo-800"
-                  >
-                    Use This
-                  </button>
-                </div>
-              </div>
+                <option value="pro">Pro</option>
+                <option value="con">Con</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Your Reasoning</label>
+              <input
+                type="text"
+                value={newItem.text}
+                onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                placeholder="Enter your reasoning..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Importance Rating</label>
+              <Rating value={newItem.rating} onChange={(rating) => setNewItem({ ...newItem, rating })} />
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <button
+              onClick={handleAddNew}
+              disabled={isSubmitting || !newItem.text.trim()}
+              className="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 font-medium shadow-lg"
+            >
+              {isSubmitting ? 'Adding...' : 'Add Pro/Con'}
+            </button>
+          </div>
+        </div>
+
+        {/* Display Existing Pros/Cons */}
+        <div className="space-y-8">
+          <div>
+            <h3 className="text-2xl font-semibold mb-6 text-green-400">Pros</h3>
+            {filteredProsCons.filter(item => item.type === 'pro').map(item => (
+              <ProConCard 
+                key={item._id} 
+                item={item} 
+                decisionId={decisionId} 
+                onUpdate={() => {
+                  getProsConsByDecision(decisionId).then(res => setProsCons(res.data));
+                }}
+                onRatingChange={(newRating) => handleRatingChange(item._id, newRating)}
+              />
             ))}
+            {filteredProsCons.filter(item => item.type === 'pro').length === 0 && (
+              <p className="text-gray-400 italic text-center py-8">No pros added yet.</p>
+            )}
           </div>
-        </section>
-      )}
-
-      <section className="mb-8 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">Add New Consideration</h2>
-
-        <div className="flex space-x-2 mb-4">
-          <button
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              newItem.type === 'pro'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => setNewItem({ ...newItem, type: 'pro' })}
-          >
-            Pro
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              newItem.type === 'con'
-                ? 'bg-red-100 text-red-800'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => setNewItem({ ...newItem, type: 'con' })}
-          >
-            Con
-          </button>
-        </div>
-
-        <textarea
-          value={newItem.text}
-          onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder={`Why is this a ${newItem.type} for ${decision[`option${activeTab}`].title}?`}
-          rows={3}
-        />
-
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center">
-            <span className="mr-2 text-sm text-gray-600">Importance:</span>
-            <Rating
-              value={newItem.rating}
-              onChange={(val) => setNewItem({ ...newItem, rating: val })}
-            />
+          
+          <div>
+            <h3 className="text-2xl font-semibold mb-6 text-red-400">Cons</h3>
+            {filteredProsCons.filter(item => item.type === 'con').map(item => (
+              <ProConCard 
+                key={item._id} 
+                item={item} 
+                decisionId={decisionId} 
+                onUpdate={() => {
+                  getProsConsByDecision(decisionId).then(res => setProsCons(res.data));
+                }}
+                onRatingChange={(newRating) => handleRatingChange(item._id, newRating)}
+              />
+            ))}
+            {filteredProsCons.filter(item => item.type === 'con').length === 0 && (
+              <p className="text-gray-400 italic text-center py-8">No cons added yet.</p>
+            )}
           </div>
+        </div>
 
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-12">
           <button
-            onClick={handleAddNew}
-            disabled={isSubmitting || !newItem.text.trim()}
-            className={`px-4 py-2 rounded-lg text-white ${
-              isSubmitting || !newItem.text.trim()
-                ? 'bg-indigo-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700'
-            }`}
+            onClick={() => navigate('/')}
+            className="px-8 py-3 text-gray-300 hover:text-white font-medium text-lg"
           >
-            {isSubmitting ? 'Adding...' : 'Add Consideration'}
+            ← Back to Home
+          </button>
+          <button
+            onClick={() => navigate(`/decisions/${decisionId}/results`)}
+            className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 font-medium text-lg shadow-lg"
+          >
+            View Results →
           </button>
         </div>
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">
-          {filteredProsCons.length > 0
-            ? 'Your Considerations'
-            : 'No considerations yet. Add your first one above!'}
-        </h2>
-
-        <div className="space-y-3">
-          {filteredProsCons.map((item) => (
-            <ProConCard
-              key={item._id}
-              item={item}
-              decisionId={decisionId}
-              onUpdate={async () => {
-                const res = await getProsConsByDecision(decisionId);
-                setProsCons(res.data);
-              }}
-            />
-          ))}
-        </div>
-      </section>
-
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={() => navigate(`/decisions/${decisionId}/mindset`)}
-          className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          Continue to Mindset Assessment
-        </button>
       </div>
     </div>
   );
