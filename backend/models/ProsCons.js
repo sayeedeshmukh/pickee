@@ -24,7 +24,7 @@ const prosConsSchema = new mongoose.Schema({
     type: Number, // 1 to 5
     required: true,
     min: 1,
-    max: 5 
+    max: 5
   },
   source: {
     type: String, // "user" or "ai"

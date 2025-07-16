@@ -10,8 +10,7 @@ export default function RateReason() {
   const navigate = useNavigate();
   const [decision, setDecision] = useState(null);
   const [prosCons, setProsCons] = useState([]);
-  const [activeTab, setActiveTab] = useState('A');
-  const [newItem, setNewItem] = useState({ text: '', type: 'pro', rating: 5 });
+  const [newItem, setNewItem] = useState({ text: '', type: 'pro', rating: 5, option: 'A' });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,7 +31,6 @@ export default function RateReason() {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [decisionId]);
 
@@ -41,22 +39,18 @@ export default function RateReason() {
       toast.error('Please enter your reasoning');
       return;
     }
-
     setIsSubmitting(true);
     try {
       await addProsCons({
         decisionId,
-        option: activeTab,
+        option: newItem.option,
         type: newItem.type,
         text: newItem.text,
         rating: newItem.rating,
         source: 'user',
       });
-
       toast.success('Added successfully!');
-      setNewItem({ text: '', type: 'pro', rating: 5 });
-
-      // Refresh the list after adding
+      setNewItem({ text: '', type: 'pro', rating: 5, option: newItem.option });
       const res = await getProsConsByDecision(decisionId);
       setProsCons(res.data);
     } catch (error) {
@@ -70,16 +64,12 @@ export default function RateReason() {
   const handleRatingChange = async (itemId, newRating) => {
     try {
       if (newRating === 1) {
-        // Delete the item if rating is 1
         await deleteProsCons(itemId);
         toast.success('Item removed (rated 1 star)');
       } else {
-        // Update the rating
         await updateProsCons(itemId, { rating: newRating });
         toast.success('Rating updated');
       }
-      
-      // Refresh the list
       const res = await getProsConsByDecision(decisionId);
       setProsCons(res.data);
     } catch (error) {
@@ -87,8 +77,6 @@ export default function RateReason() {
       console.error('Rating update error:', error);
     }
   };
-
-  const filteredProsCons = prosCons.filter((item) => item.option === activeTab);
 
   if (isLoading) {
     return (
@@ -117,129 +105,106 @@ export default function RateReason() {
     );
   }
 
+  // Split pros/cons by option and type
+  const optionAPros = prosCons.filter(item => item.option === 'A' && item.type === 'pro');
+  const optionACons = prosCons.filter(item => item.option === 'A' && item.type === 'con');
+  const optionBPros = prosCons.filter(item => item.option === 'B' && item.type === 'pro');
+  const optionBCons = prosCons.filter(item => item.option === 'B' && item.type === 'con');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="max-w-6xl mx-auto py-8 px-4">
-        {/* Header */}
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">{decision.title}</h1>
-          <p className="text-xl text-gray-300">Rate the pros and cons for each option to help make your decision</p>
+      {/* Navbar */}
+      <nav className="bg-[#FFF7E2] text-[#262C38] rounded-2xl mx-2 md:mx-8 mt-4 md:mt-6 mb-6 md:mb-10 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-4 shadow-lg font-['Lexend_Deca','sans-serif']">
+        <div className="text-3xl md:text-4xl font-bold font-['Limelight','sans-serif']">orica</div>
+        <div className="flex gap-6 md:gap-10 text-lg md:text-xl mt-2 md:mt-0">
+          <button onClick={() => navigate('/')} className="navLinks home hover:text-[#48bac4]">home</button>
+          <button onClick={() => navigate('/decisions/create')} className="navLinks hover:text-[#48bac4]">decide</button>
+          <a href="#about" className="navLinks hover:text-[#48bac4]">about us</a>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-2 md:px-4 pb-10 md:pb-16">
+        <header className="mb-6 md:mb-10 text-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 font-['Limelight','sans-serif']">{decision.title}</h1>
+          <p className="text-lg md:text-xl text-[#FFF7E2] font-['Lexend_Deca','sans-serif']">Rate the pros and cons for each option to help make your decision</p>
         </header>
 
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 bg-white/10 backdrop-blur-md p-1 rounded-lg mb-8">
-          <button
-            onClick={() => setActiveTab('A')}
-            className={`flex-1 py-3 px-6 rounded-md font-medium transition-colors ${
-              activeTab === 'A' ? 'bg-white text-gray-900 shadow-lg' : 'text-white hover:text-pink-300'
-            }`}
-          >
-            Option A: {decision.optionA.title}
-          </button>
-          <button
-            onClick={() => setActiveTab('B')}
-            className={`flex-1 py-3 px-6 rounded-md font-medium transition-colors ${
-              activeTab === 'B' ? 'bg-white text-gray-900 shadow-lg' : 'text-white hover:text-pink-300'
-            }`}
-          >
-            Option B: {decision.optionB.title}
-          </button>
-        </div>
+        {/* Responsive Side-by-side options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+          {/* Option A */}
+          <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-2xl p-4 md:p-6 border-2 border-blue-200 shadow-xl">
+            <h2 className="text-xl md:text-2xl font-bold text-blue-700 mb-2 font-['Limelight','sans-serif']">Option A</h2>
+            <p className="text-base md:text-lg text-blue-900 mb-4 md:mb-6 font-['Lexend_Deca','sans-serif']">{decision.optionA.title}</p>
+            <div className="mb-3 md:mb-4">
+              <h3 className="text-base md:text-lg font-semibold text-green-600 mb-2">Pros</h3>
+              {optionAPros.length > 0 ? optionAPros.map(item => (
+                <ProConCard key={item._id} item={item} decisionId={decisionId} onUpdate={() => getProsConsByDecision(decisionId).then(res => setProsCons(res.data))} onRatingChange={newRating => handleRatingChange(item._id, newRating)} />
+              )) : <p className="text-gray-400 italic">No pros yet.</p>}
+            </div>
+            <div>
+              <h3 className="text-base md:text-lg font-semibold text-red-600 mb-2">Cons</h3>
+              {optionACons.length > 0 ? optionACons.map(item => (
+                <ProConCard key={item._id} item={item} decisionId={decisionId} onUpdate={() => getProsConsByDecision(decisionId).then(res => setProsCons(res.data))} onRatingChange={newRating => handleRatingChange(item._id, newRating)} />
+              )) : <p className="text-gray-400 italic">No cons yet.</p>}
+            </div>
+            {/* Add new pro/con for Option A */}
+            <div className="mt-6 md:mt-8">
+              <h4 className="text-sm md:text-md font-semibold text-[#262C38] mb-2">Add to Option A</h4>
+              <div className="flex flex-col md:flex-row gap-2 mb-2">
+                <select value={newItem.type} onChange={e => setNewItem({ ...newItem, type: e.target.value, option: 'A' })} className="rounded-lg px-3 py-2 bg-white/20 text-[#262C38]">
+                  <option value="pro">Pro</option>
+                  <option value="con">Con</option>
+                </select>
+                <input type="text" value={newItem.option === 'A' ? newItem.text : ''} onChange={e => setNewItem({ ...newItem, text: e.target.value, option: 'A' })} placeholder="Add your reason..." className="flex-1 rounded-lg px-3 py-2 bg-white/20 text-[#262C38]" />
+                <Rating value={newItem.option === 'A' ? newItem.rating : 5} onChange={rating => setNewItem({ ...newItem, rating, option: 'A' })} />
+                <button onClick={handleAddNew} disabled={isSubmitting || !newItem.text.trim() || newItem.option !== 'A'} className="px-4 py-2 bg-[#48bac4] text-white rounded-lg font-bold hover:bg-[#02939F] disabled:opacity-50">Add</button>
+              </div>
+            </div>
+          </div>
 
-        {/* Add New Pro/Con Form */}
-        <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 mb-8 shadow-xl">
-          <h3 className="text-xl font-semibold text-white mb-4">Add Your Own Pro/Con</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
-              <select
-                value={newItem.type}
-                onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-              >
-                <option value="pro">Pro</option>
-                <option value="con">Con</option>
-              </select>
+          {/* Option B */}
+          <div className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 rounded-2xl p-4 md:p-6 border-2 border-pink-200 shadow-xl">
+            <h2 className="text-xl md:text-2xl font-bold text-pink-700 mb-2 font-['Limelight','sans-serif']">Option B</h2>
+            <p className="text-base md:text-lg text-pink-900 mb-4 md:mb-6 font-['Lexend_Deca','sans-serif']">{decision.optionB.title}</p>
+            <div className="mb-3 md:mb-4">
+              <h3 className="text-base md:text-lg font-semibold text-green-600 mb-2">Pros</h3>
+              {optionBPros.length > 0 ? optionBPros.map(item => (
+                <ProConCard key={item._id} item={item} decisionId={decisionId} onUpdate={() => getProsConsByDecision(decisionId).then(res => setProsCons(res.data))} onRatingChange={newRating => handleRatingChange(item._id, newRating)} />
+              )) : <p className="text-gray-400 italic">No pros yet.</p>}
             </div>
-            
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Your Reasoning</label>
-              <input
-                type="text"
-                value={newItem.text}
-                onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                placeholder="Enter your reasoning..."
-              />
+              <h3 className="text-base md:text-lg font-semibold text-red-600 mb-2">Cons</h3>
+              {optionBCons.length > 0 ? optionBCons.map(item => (
+                <ProConCard key={item._id} item={item} decisionId={decisionId} onUpdate={() => getProsConsByDecision(decisionId).then(res => setProsCons(res.data))} onRatingChange={newRating => handleRatingChange(item._id, newRating)} />
+              )) : <p className="text-gray-400 italic">No cons yet.</p>}
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Importance Rating</label>
-              <Rating value={newItem.rating} onChange={(rating) => setNewItem({ ...newItem, rating })} />
+            {/* Add new pro/con for Option B */}
+            <div className="mt-6 md:mt-8">
+              <h4 className="text-sm md:text-md font-semibold text-[#262C38] mb-2">Add to Option B</h4>
+              <div className="flex flex-col md:flex-row gap-2 mb-2">
+                <select value={newItem.type} onChange={e => setNewItem({ ...newItem, type: e.target.value, option: 'B' })} className="rounded-lg px-3 py-2 bg-white/20 text-[#262C38]">
+                  <option value="pro">Pro</option>
+                  <option value="con">Con</option>
+                </select>
+                <input type="text" value={newItem.option === 'B' ? newItem.text : ''} onChange={e => setNewItem({ ...newItem, text: e.target.value, option: 'B' })} placeholder="Add your reason..." className="flex-1 rounded-lg px-3 py-2 bg-white/20 text-[#262C38]" />
+                <Rating value={newItem.option === 'B' ? newItem.rating : 5} onChange={rating => setNewItem({ ...newItem, rating, option: 'B' })} />
+                <button onClick={handleAddNew} disabled={isSubmitting || !newItem.text.trim() || newItem.option !== 'B'} className="px-4 py-2 bg-[#E88296] text-white rounded-lg font-bold hover:bg-[#c94a6a] disabled:opacity-50">Add</button>
+              </div>
             </div>
-          </div>
-          
-          <div className="mt-4">
-            <button
-              onClick={handleAddNew}
-              disabled={isSubmitting || !newItem.text.trim()}
-              className="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 font-medium shadow-lg"
-            >
-              {isSubmitting ? 'Adding...' : 'Add Pro/Con'}
-            </button>
-          </div>
-        </div>
-
-        {/* Display Existing Pros/Cons */}
-        <div className="space-y-8">
-          <div>
-            <h3 className="text-2xl font-semibold mb-6 text-green-400">Pros</h3>
-            {filteredProsCons.filter(item => item.type === 'pro').map(item => (
-              <ProConCard 
-                key={item._id} 
-                item={item} 
-                decisionId={decisionId} 
-                onUpdate={() => {
-                  getProsConsByDecision(decisionId).then(res => setProsCons(res.data));
-                }}
-                onRatingChange={(newRating) => handleRatingChange(item._id, newRating)}
-              />
-            ))}
-            {filteredProsCons.filter(item => item.type === 'pro').length === 0 && (
-              <p className="text-gray-400 italic text-center py-8">No pros added yet.</p>
-            )}
-          </div>
-          
-          <div>
-            <h3 className="text-2xl font-semibold mb-6 text-red-400">Cons</h3>
-            {filteredProsCons.filter(item => item.type === 'con').map(item => (
-              <ProConCard 
-                key={item._id} 
-                item={item} 
-                decisionId={decisionId} 
-                onUpdate={() => {
-                  getProsConsByDecision(decisionId).then(res => setProsCons(res.data));
-                }}
-                onRatingChange={(newRating) => handleRatingChange(item._id, newRating)}
-              />
-            ))}
-            {filteredProsCons.filter(item => item.type === 'con').length === 0 && (
-              <p className="text-gray-400 italic text-center py-8">No cons added yet.</p>
-            )}
           </div>
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-12">
+        <div className="flex flex-col md:flex-row justify-between mt-10 md:mt-16 gap-4 md:gap-0">
           <button
             onClick={() => navigate('/')}
-            className="px-8 py-3 text-gray-300 hover:text-white font-medium text-lg"
+            className="px-8 py-3 text-[#262C38] bg-[#FFF7E2] rounded-lg font-bold hover:bg-[#48bac4] hover:text-white text-lg shadow-md w-full md:w-auto"
           >
             ← Back to Home
           </button>
           <button
             onClick={() => navigate(`/decisions/${decisionId}/results`)}
-            className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 font-medium text-lg shadow-lg"
+            className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 text-lg shadow-lg w-full md:w-auto"
           >
             View Results →
           </button>

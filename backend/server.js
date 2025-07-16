@@ -38,3 +38,10 @@ app.use('/api/ai', aiRoutes);
 
 const prosConsRoutes = require('./routes/prosConsRoutes');
 app.use('/api/proscons', prosConsRoutes);
+
+const authRoutes = require('./routes/authRoutes');
+const authMiddleware = require('./middlewares/auth');
+app.use('/api/auth', authRoutes);
+
+// Protect /api/auth/profile
+app.get('/api/auth/profile', authMiddleware, require('./controllers/authController').getProfile);

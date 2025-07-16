@@ -25,34 +25,35 @@ function extractJsonFromString(text) {
 
 async function generateProsCons(optionA, optionB) {
   try {
-    const prompt = `Act as a professional decision-making assistant. Compare these two options and generate 3 high-quality pros and 3 high-quality cons for each:
-    Option A: ${optionA}
-    Option B: ${optionB}
-    
-    Requirements:
-    - Be specific and concrete
-    - Avoid generic statements
-    - Consider both short-term and long-term impacts
-    - Include potential risks and opportunities
-    - Format as valid JSON exactly like this (ensure all keys are present, even if arrays are empty):
-    {
-      "optionA": { 
-        "pros": ["specific pro 1", "specific pro 2", "specific pro 3"],
-        "cons": ["specific con 1", "specific con 2", "specific con 3"] 
-      },
-      "optionB": {
-        "pros": ["specific pro 1", "specific pro 2", "specific pro 3"],
-        "cons": ["specific con 1", "specific con 2", "specific con 3"]
-      }
-    }`;
+    const prompt = `Imagine you're helping a close friend talk through a decision. Compare these two options and generate 3 pros and 3 cons for each, but keep it super casual, friendly, and real—like you're chatting over coffee. Use a conversational, lively tone. Avoid sounding like a robot or a formal report. Make each point feel personal, relatable, and easy to read.
+
+Option A: ${optionA}
+Option B: ${optionB}
+
+Requirements:
+- Be specific and concrete
+- Avoid generic statements
+- Use casual, friendly, and even playful language
+- Make it sound like real advice from a friend
+- Format as valid JSON exactly like this (ensure all keys are present, even if arrays are empty):
+{
+  "optionA": { 
+    "pros": ["casual pro 1", "casual pro 2", "casual pro 3"],
+    "cons": ["casual con 1", "casual con 2", "casual con 3"] 
+  },
+  "optionB": {
+    "pros": ["casual pro 1", "casual pro 2", "casual pro 3"],
+    "cons": ["casual con 1", "casual con 2", "casual con 3"]
+  }
+}`;
     
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.7,
+        temperature: 0.9,
         topK: 40,
-        topP: 0.95,
+        topP: 0.98,
         maxOutputTokens: 800,
       },
       safetySettings: [
@@ -84,22 +85,22 @@ async function generateProsCons(optionA, optionB) {
     return {
       optionA: {
         pros: [
-          "AI could not generate specific pros for Option A.",
-          "Consider its benefits related to your goals."
+          "AI couldn't come up with casual pros for Option A. Try thinking about what makes it fun or easy!",
+          "Consider what feels right for you."
         ],
         cons: [
-          "AI could not generate specific cons for Option A.",
-          "Think about potential drawbacks."
+          "AI couldn't come up with casual cons for Option A. Maybe chat with a friend for more ideas!",
+          "Think about what might bug you."
         ]
       },
       optionB: {
         pros: [
-          "AI could not generate specific pros for Option B.",
-          "Consider its benefits related to your goals."
+          "AI couldn't come up with casual pros for Option B. Try thinking about what makes it fun or easy!",
+          "Consider what feels right for you."
         ],
         cons: [
-          "AI could not generate specific cons for Option B.",
-          "Think about potential drawbacks."
+          "AI couldn't come up with casual cons for Option B. Maybe chat with a friend for more ideas!",
+          "Think about what might bug you."
         ]
       }
     };
