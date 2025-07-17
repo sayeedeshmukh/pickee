@@ -1,15 +1,23 @@
-function analyzeDecision({ prosCons, userPreference }) {
+function analyzeDecision({ prosCons }) {
     let scoreA = 0;
     let scoreB = 0;
     let emotionalWeight = 0;
     let practicalWeight = 0;
+    let prosA = [];
+    let consA = [];
+    let prosB = [];
+    let consB = [];
 
-    // --- 1. Add up ratings for pros/cons ---
+    // --- 1. Add up ratings for pros/cons and collect reasons ---
     for (const item of prosCons) {
         if (item.option === 'A') {
             scoreA += item.rating;
+            if (item.type === 'pro') prosA.push(item.text);
+            if (item.type === 'con') consA.push(item.text);
         } else if (item.option === 'B') {
             scoreB += item.rating;
+            if (item.type === 'pro') prosB.push(item.text);
+            if (item.type === 'con') consB.push(item.text);
         }
 
         if (item.type === 'pro' && item.rating >= 7) {
@@ -19,27 +27,31 @@ function analyzeDecision({ prosCons, userPreference }) {
         }
     }
 
-    // --- Decide which option is better ---
-    let recommendedOption;
-    if (userPreference && Math.abs(scoreA - scoreB) <= 2) {
-        // If user has a preference and the scores are close, use their preference
-        recommendedOption = userPreference === 'A' ? 'Option A' : 'Option B';
+    // --- Decide which option is better (always by score) ---
+    let recommendedOption = scoreA > scoreB ? 'Option A' : 'Option B';
+    let winningPros, winningCons, losingPros, losingCons, winningLabel, losingLabel;
+    if (recommendedOption === 'Option A') {
+        winningPros = prosA; winningCons = consA; losingPros = prosB; losingCons = consB;
+        winningLabel = 'Option A'; losingLabel = 'Option B';
     } else {
-        recommendedOption = scoreA > scoreB ? 'Option A' : 'Option B';
+        winningPros = prosB; winningCons = consB; losingPros = prosA; losingCons = consA;
+        winningLabel = 'Option B'; losingLabel = 'Option A';
     }
 
     let leaning = emotionalWeight > practicalWeight ? 'Emotional' :
                 practicalWeight > emotionalWeight ? 'Practical' : 'Balanced';
 
-    // --- Generate reasoning ---
-    let reasoning = '';
-    if (leaning === 'Emotional') {
-        reasoning = 'The cons suggest emotional factors might be influencing this decision.';
-    } else if (leaning === 'Practical') {
-        reasoning = 'The pros suggest this is the more practical choice.';
-    } else {
-        reasoning = 'The decision appears balanced between practical and emotional factors.';
+    // --- Generate personal, motivational reasoning ---
+    let reasoning = `Based on your ratings, ${winningLabel} stands out as the stronger choice for you right now. `;
+    if (winningPros.length > 0) {
+        reasoning += `What really makes this option shine is: "${winningPros[0]}"`;
+        if (winningPros.length > 1) reasoning += `, and also: "${winningPros[1]}"`;
+        reasoning += '. ';
     }
+    if (winningCons.length > 0) {
+        reasoning += `Of course, every choice has its challenges, like: "${winningCons[0]}". But your overall ratings show you believe the positives outweigh the negatives.`;
+    }
+    reasoning += ` Remember, this isn't just about logic—it's about what feels right for you. Trust your process and take pride in making a thoughtful decision!`;
 
     return {
         recommendedOption,
