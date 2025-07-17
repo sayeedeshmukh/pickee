@@ -6,6 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
 // Register
 exports.registerUser = async (req, res) => {
+  console.log('Register endpoint hit', req.body);
   try {
     const { username, email, password } = req.body;
     if (!username || !email || !password) {

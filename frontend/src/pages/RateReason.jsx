@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
-import { getDecision, getProsConsByDecision, addProsCons, updateProsCons, deleteProsCons } from '../services/api';
+import { getDecision, getProsConsByDecision, addProsCons, updateProsCons } from '../services/api';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -63,13 +63,8 @@ export default function RateReason() {
 
   const handleRatingChange = async (itemId, newRating) => {
     try {
-      if (newRating === 1) {
-        await deleteProsCons(itemId);
-        toast.success('Item removed (rated 1 star)');
-      } else {
-        await updateProsCons(itemId, { rating: newRating });
-        toast.success('Rating updated');
-      }
+      await updateProsCons(itemId, { rating: newRating });
+      toast.success('Rating updated');
       const res = await getProsConsByDecision(decisionId);
       setProsCons(res.data);
     } catch (error) {
@@ -114,14 +109,6 @@ export default function RateReason() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Navbar */}
-      <nav className="bg-[#FFF7E2] text-[#262C38] rounded-2xl mx-2 md:mx-8 mt-4 md:mt-6 mb-6 md:mb-10 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-4 shadow-lg font-['Lexend_Deca','sans-serif']">
-        <div className="text-3xl md:text-4xl font-bold font-['Limelight','sans-serif']">orica</div>
-        <div className="flex gap-6 md:gap-10 text-lg md:text-xl mt-2 md:mt-0">
-          <button onClick={() => navigate('/')} className="navLinks home hover:text-[#48bac4]">home</button>
-          <button onClick={() => navigate('/decisions/create')} className="navLinks hover:text-[#48bac4]">decide</button>
-          <a href="#about" className="navLinks hover:text-[#48bac4]">about us</a>
-        </div>
-      </nav>
 
       <div className="max-w-7xl mx-auto px-2 md:px-4 pb-10 md:pb-16">
         <header className="mb-6 md:mb-10 text-center">

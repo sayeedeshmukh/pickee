@@ -5,7 +5,12 @@ const API = axios.create({
 });
 
 // Decisions
-export const createDecision = (decisionData) => API.post('/decisions', decisionData);
+export const createDecision = (decisionData, token) => {
+  if (token) {
+    return API.post('/decisions', decisionData, { headers: { Authorization: `Bearer ${token}` } });
+  }
+  return API.post('/decisions', decisionData);
+};
 export const getDecision = (id) => API.get(`/decisions/${id}`);
 
 // ProsCons
@@ -15,7 +20,12 @@ export const updateProsCons = (id, updateData) => API.put(`/proscons/${id}`, upd
 export const deleteProsCons = (id) => API.delete(`/proscons/${id}`);
 
 // Analysis (Existing, but check its implementation in your backend analysisController.js)
-export const getDecisionAnalysis = (decisionId) => API.get(`/decisions/${decisionId}/analysis`);
+export const getDecisionAnalysis = (decisionId, userPreference) => {
+  if (userPreference) {
+    return API.get(`/decisions/${decisionId}/analysis?userPreference=${userPreference}`);
+  }
+  return API.get(`/decisions/${decisionId}/analysis`);
+};
 
 // --- Gemini API Integrations ---
 
@@ -30,3 +40,15 @@ export const getGeminiSummary = async (decisionId) => {
   const res = await API.get(`/ai/decision-analysis-gemini/${decisionId}`);
   return res.data;
 };
+
+export async function registerUser(data) {
+  return await axios.post('/api/auth/register', data);
+}
+
+export async function loginUser(data) {
+  return await axios.post('/api/auth/login', data);
+}
+
+export async function logoutUser() {
+  return await axios.post('/api/auth/logout');
+}

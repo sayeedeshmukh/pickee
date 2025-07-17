@@ -1,4 +1,4 @@
-function analyzeDecision({ prosCons }) {
+function analyzeDecision({ prosCons, userPreference }) {
     let scoreA = 0;
     let scoreB = 0;
     let emotionalWeight = 0;
@@ -20,7 +20,14 @@ function analyzeDecision({ prosCons }) {
     }
 
     // --- Decide which option is better ---
-    let recommendedOption = scoreA > scoreB ? 'Option A' : 'Option B';
+    let recommendedOption;
+    if (userPreference && Math.abs(scoreA - scoreB) <= 2) {
+        // If user has a preference and the scores are close, use their preference
+        recommendedOption = userPreference === 'A' ? 'Option A' : 'Option B';
+    } else {
+        recommendedOption = scoreA > scoreB ? 'Option A' : 'Option B';
+    }
+
     let leaning = emotionalWeight > practicalWeight ? 'Emotional' :
                 practicalWeight > emotionalWeight ? 'Practical' : 'Balanced';
 

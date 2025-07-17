@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createDecision } from '../services/api';
 import { toast } from 'react-hot-toast';
 
-export default function DecisionForm({ onDecisionCreated }) {
+export default function DecisionForm({ onDecisionCreated, token }) {
   const [formData, setFormData] = useState({
     optionA: { title: '', description: '' },
     optionB: { title: '', description: '' },
@@ -32,7 +32,7 @@ export default function DecisionForm({ onDecisionCreated }) {
     try {
       console.log("📤 Submitting decision form with:", formData);
 
-      const response = await createDecision(formData);
+      const response = await createDecision(formData, token);
       console.log("✅ Decision created:", response.data);
 
       toast.success('Decision created!');

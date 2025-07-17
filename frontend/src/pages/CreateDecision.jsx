@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import DecisionForm from '../components/DecisionForm';
 import { getDecision, generateProsConsGemini } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../components/AuthContext';
 
 export default function CreateDecision() {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
+  const { token } = useAuth();
 
   const handleDecisionCreated = async (decisionId) => {
     setIsGenerating(true);
@@ -41,7 +43,7 @@ export default function CreateDecision() {
         </div>
         
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
-          <DecisionForm onDecisionCreated={handleDecisionCreated} />
+          <DecisionForm onDecisionCreated={handleDecisionCreated} token={token} />
         </div>
         
         {isGenerating && (

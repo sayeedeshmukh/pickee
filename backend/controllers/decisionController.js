@@ -1,10 +1,20 @@
 const Decision = require('../models/Decision');
+const User = require('../models/User');
 
 // Create new decision with empty pros/cons
 const createDecision = async (req, res) => {
   try {
-    const newDecision = new Decision(req.body);
+    let newDecision;
+    if (req.user && req.user.id) {
+      newDecision = new Decision({ ...req.body, user: req.user.id });
+    } else {
+      newDecision = new Decision(req.body);
+    }
     const saved = await newDecision.save();
+    // If user is logged in, add decision to user's decisions array
+    if (req.user && req.user.id) {
+      await User.findByIdAndUpdate(req.user.id, { $push: { decisions: saved._id } });
+    }
     res.status(201).json(saved);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create decision', error });

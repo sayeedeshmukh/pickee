@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/AuthContext';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -14,13 +16,46 @@ export default function Home() {
                 orica
               </span>
             </div>
-            <div className="flex space-x-8">
+            <div className="flex space-x-8 items-center">
               <a href="/" className="text-white hover:text-pink-300 transition-colors font-medium">
                 home
               </a>
               <a href="#about" className="text-white hover:text-pink-300 transition-colors font-medium">
                 about us
               </a>
+              {user ? (
+                <>
+                  {/* Profile Icon */}
+                  <button
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow hover:scale-105 transition-transform"
+                    title="Profile"
+                    onClick={() => alert('Profile feature coming soon!')}
+                  >
+                    <span role="img" aria-label="profile">👤</span>
+                  </button>
+                  <button
+                    className="ml-4 px-4 py-2 bg-gray-200 text-pink-600 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                    onClick={logout}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="ml-4 px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                    onClick={() => navigate('/login')}
+                  >
+                    Login
+                  </button>
+                  <button
+                    className="ml-4 px-4 py-2 bg-pink-500 text-white rounded-lg font-medium hover:bg-pink-600 transition-colors"
+                    onClick={() => navigate('/signup')}
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

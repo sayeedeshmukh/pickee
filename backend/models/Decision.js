@@ -16,7 +16,7 @@ const optionSchema = new mongoose.Schema({
 const decisionSchema = new mongoose.Schema({
   optionA: optionSchema,
   optionB: optionSchema,
-  userName: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   createdAt: {
     type: Date,
     default: Date.now
