@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
 import { getDecision, getProsConsByDecision, addProsCons, updateProsCons } from '../services/api';
+import Header from '../components/Header';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -108,8 +109,7 @@ export default function RateReason() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Navbar */}
-
+      <Header />
       <div className="max-w-7xl mx-auto px-2 md:px-4 pb-10 md:pb-16">
         <header className="mb-6 md:mb-10 text-center">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 font-['Limelight','sans-serif']">{decision.title}</h1>

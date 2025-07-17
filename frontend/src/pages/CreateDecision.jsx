@@ -4,6 +4,7 @@ import DecisionForm from '../components/DecisionForm';
 import { getDecision, generateProsConsGemini } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../components/AuthContext';
+import Header from '../components/Header';
 
 export default function CreateDecision() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function CreateDecision() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <Header />
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">Create Your Decision</h1>

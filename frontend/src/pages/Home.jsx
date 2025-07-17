@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
+import Header from '../components/Header';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -7,59 +8,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Navigation */}
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="text-3xl font-bold text-white">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
-                orica
-              </span>
-            </div>
-            <div className="flex space-x-8 items-center">
-              <a href="/" className="text-white hover:text-pink-300 transition-colors font-medium">
-                home
-              </a>
-              <a href="#about" className="text-white hover:text-pink-300 transition-colors font-medium">
-                about us
-              </a>
-              {user ? (
-                <>
-                  {/* Profile Icon */}
-                  <button
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow hover:scale-105 transition-transform"
-                    title="Profile"
-                    onClick={() => alert('Profile feature coming soon!')}
-                  >
-                    <span role="img" aria-label="profile">👤</span>
-                  </button>
-                  <button
-                    className="ml-4 px-4 py-2 bg-gray-200 text-pink-600 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-                    onClick={logout}
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    className="ml-4 px-4 py-2 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors"
-                    onClick={() => navigate('/login')}
-                  >
-                    Login
-                  </button>
-                  <button
-                    className="ml-4 px-4 py-2 bg-pink-500 text-white rounded-lg font-medium hover:bg-pink-600 transition-colors"
-                    onClick={() => navigate('/signup')}
-                  >
-                    Sign Up
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       {/* Hero Section */}
       <main className="relative">
@@ -67,9 +16,9 @@ export default function Home() {
           <div className="text-center">
             {/* Main Heading */}
             <div className="mb-8">
-              <h1 className="text-6xl md:text-8xl font-bold text-white mb-4">
-                This is{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+              <h1 className="text-6xl md:text-8xl font-bold mb-4" style={{ color: '#fff6e4' }}>
+                <span className="font-limelight">This is</span>{' '}
+                <span className="font-limelight" style={{ color: '#e98198' }}>
                   Orica
                 </span>
               </h1>
@@ -77,9 +26,9 @@ export default function Home() {
 
             {/* Subtitle */}
             <div className="mb-12 max-w-4xl mx-auto">
-              <p className="text-2xl md:text-3xl text-gray-300 leading-relaxed">
+              <p className="text-2xl md:text-3xl leading-relaxed" style={{ color: '#fff6e4' }}>
                 Make better choices. With{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-semibold">
+                <span className="font-semibold" style={{ color: '#5de7ff' }}>
                   AI + You
                 </span>
                 <br />
@@ -88,16 +37,16 @@ export default function Home() {
                 Pros, cons, emotions, logic — all in one place.
                 <br />
                 Let your{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-semibold">
+                <span className="font-semibold" style={{ color: '#5de7ff' }}>
                   brain
                 </span>{' '}
                 AND your{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-semibold">
+                <span className="font-semibold" style={{ color: '#5de7ff' }}>
                   gut
                 </span>{' '}
                 weigh in.
               </p>
-              <p className="text-4xl font-bold text-pink-400 mt-4 transform -rotate-12">
+              <p className="text-4xl font-bold mt-4 transform -rotate-12 font-barrio" style={{ color: '#e98198' }}>
                 Cool, right?
               </p>
             </div>
@@ -117,46 +66,26 @@ export default function Home() {
               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl">
                 <div className="text-center mb-6">
                   <p className="text-2xl font-bold text-white mb-4">MORE THAN JUST A TOOL</p>
-                  <p className="text-lg text-gray-300 leading-relaxed">
+                  <p className="text-lg leading-relaxed" style={{ color: '#fff6e4' }}>
                     We're here to make decisions feel less scary
                     <br />
                     and more you-shaped.
                     <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-semibold">
+                    <span className="font-semibold" style={{ color: '#5de7ff' }}>
                       No pressure
                     </span>
                     .{' '}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-semibold">
+                    <span className="font-semibold" style={{ color: '#5de7ff' }}>
                       No judgment
                     </span>
                     . Just{' '}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-semibold">
+                    <span className="font-semibold" style={{ color: '#5de7ff' }}>
                       better clarity
                     </span>
                     .
                   </p>
                 </div>
                 
-                {/* Feature Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                  <div className="text-center p-6 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-4xl mb-4">🤖</div>
-                    <h3 className="text-xl font-semibold text-white mb-2">AI-Powered Insights</h3>
-                    <p className="text-gray-300">Get intelligent pros and cons generated by advanced AI</p>
-                  </div>
-                  
-                  <div className="text-center p-6 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-4xl mb-4">⚖️</div>
-                    <h3 className="text-xl font-semibold text-white mb-2">Smart Analysis</h3>
-                    <p className="text-gray-300">Rate importance and get personalized recommendations</p>
-                  </div>
-                  
-                  <div className="text-center p-6 bg-white/5 rounded-xl border border-white/10">
-                    <div className="text-4xl mb-4">🎯</div>
-                    <h3 className="text-xl font-semibold text-white mb-2">Clear Decisions</h3>
-                    <p className="text-gray-300">Make confident choices with comprehensive analysis</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

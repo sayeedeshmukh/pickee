@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDecision, getDecisionAnalysis, getGeminiSummary } from '../services/api';
 import { toast } from 'react-hot-toast';
+import Header from '../components/Header';
 
 export default function Results() {
   const { id: decisionId } = useParams();
@@ -58,6 +59,7 @@ export default function Results() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Header />
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="text-center mb-12">
