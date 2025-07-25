@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDecision, getDecisionAnalysis, getGeminiSummary } from '../services/api';
 import { toast } from 'react-hot-toast';
+import Header from '../components/Header';
 
 export default function Results() {
   const { id: decisionId } = useParams();

@@ -6,7 +6,7 @@ Orica is a full-stack MERN web app that helps users make thoughtful decisions be
 
 - Compares two options using detailed **pros and cons**
 - **AI-generated suggestions** using Hugging Face models
-- Analyze user **mindset and decision style** (emotional vs practical)
+- Analyze user **mindset and decision style**
 - Visual summaries and final **recommendations**
 - Users can also input and rate their own pros/cons
 - Built using the **MERN stack** (MongoDB, Express, React, Node.js)

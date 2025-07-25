@@ -30,14 +30,14 @@ export default function DecisionForm({ onDecisionCreated, token }) {
     setIsSubmitting(true);
     
     try {
-      console.log("📤 Submitting decision form with:", formData);
+      console.log(" Submitting decision form with:", formData);
 
       const response = await createDecision(formData, token);
-      console.log("✅ Decision created:", response.data);
+      console.log(" Decision created:", response.data);
 
       toast.success('Decision created!');
       if (onDecisionCreated) {
-        console.log("➡️ Triggering onDecisionCreated with ID:", response.data._id);
+        console.log(" Triggering onDecisionCreated with ID:", response.data._id);
         onDecisionCreated(response.data._id);
       } else {
         navigate(`/decisions/${response.data._id}/rate`);
@@ -61,7 +61,7 @@ export default function DecisionForm({ onDecisionCreated, token }) {
           value={formData.userName}
           onChange={handleChange}
           className="w-full max-w-md mx-auto px-6 py-4 text-lg bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-          placeholder="Enter your name..."
+          placeholder="Enter your name here!"
           required
         />
       </div>
