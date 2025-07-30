@@ -41,6 +41,13 @@ export const getGeminiSummary = async (decisionId) => {
   return res.data;
 };
 
+// Fetch user decision history
+export const getUserDecisionHistory = (token) => {
+  return API.get('/decisions/user/history', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};
+
 export async function registerUser(data) {
   return await axios.post('/api/auth/register', data);
 }

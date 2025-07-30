@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDecision, getDecisionAnalysis, getGeminiSummary } from '../services/api';
 import { toast } from 'react-hot-toast';
-import Header from '../components/Header';
 
 export default function Results() {
   const { id: decisionId } = useParams();
@@ -18,7 +17,7 @@ export default function Results() {
       try {
         const [decisionRes, analysisRes] = await Promise.all([
           getDecision(decisionId),
-          getDecisionAnalysis(decisionId), // Your existing analysis endpoint
+          getDecisionAnalysis(decisionId), 
         ]);
         setDecision(decisionRes.data);
         setAnalysis(analysisRes.data);
@@ -232,13 +231,15 @@ function StillNotSureSection({ analysis }) {
     setAdvice(getAdviceForMindset(detected, form));
     // If user selected a preference, re-fetch analysis with that preference
     if (form.userPreference) {
-      const { getDecisionAnalysis } = require('../services/api');
+      const res = await getDecisionAnalysis(decisionId, form.userPreference);
+      setAnalysisResult(res.data);
       const urlParams = new URLSearchParams(window.location.pathname.split('/'));
       const decisionId = urlParams[urlParams.length - 2];
       try {
         const res = await getDecisionAnalysis(decisionId, form.userPreference);
         setAnalysisResult(res.data);
       } catch (err) {
+        console.error('Error fetching decision analysis:', err);
         // fallback: keep previous analysis
       }
     }

@@ -55,7 +55,8 @@ export default function Home() {
             <div className="mb-16">
               <button
                 onClick={() => navigate('/decisions/create')}
-                className="px-12 py-6 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xl font-bold rounded-full hover:from-pink-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-pink-500/25"
+                className="px-12 py-6 text-white text-xl font-bold rounded-full transform hover:scale-105 transition-all duration-300 shadow-2xl "
+              style={{backgroundColor:'#fff6e4',color:'#1c2838'}}
               >
                 Start Deciding Now
               </button>

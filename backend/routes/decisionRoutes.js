@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const { createDecision, getDecision } = require('../controllers/decisionController');
+const { createDecision, getDecision, getUserDecisions } = require('../controllers/decisionController');
 const auth = require('../middlewares/auth');
 
 // these should be valid FUNCTIONS
 router.post('/', authOptional, createDecision);
 router.get('/:id', getDecision);
+router.get('/user/history', auth, getUserDecisions);
 
 module.exports = router;
 
