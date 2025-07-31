@@ -56,7 +56,7 @@ export default function LoginPage() {
           <button
             type="submit"
             className="w-full py-3 rounded-xl font-bold text-xl transition-all duration-200 shadow-lg"
-            style={{ background: '#5de7ff', color: '#1c2838' }}
+            style={{ background: '#e98198', color: '#1c2838' }}
             disabled={loading}
           >
             {loading ? 'Logging In...' : 'Login'}

@@ -74,7 +74,11 @@ const getGeminiProsCons = async (req, res) => {
     }
     
     // Save all AI suggestions to database
-    if (prosConsToSave.length > 0) {
+    const allTexts = prosConsToSave.map(item => item.text || '').join(' ');
+    if (
+      prosConsToSave.length > 0 &&
+      !allTexts.includes("AI couldn't come up")
+    ) {
       await ProsCons.insertMany(prosConsToSave);
       console.log(`Saved ${prosConsToSave.length} AI suggestions to database`);
     }

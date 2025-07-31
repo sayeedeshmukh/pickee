@@ -166,7 +166,7 @@ export default function AboutUs() {
                   Orica is built by a passionate team of developers, designers, and decision-making enthusiasts. 
                   We're committed to creating tools that make life's choices a little bit easier.
                 </p>
-                <p className="text-2xl font-bold transform -rotate-12 font-barrio" style={{ color: '#e98198' }}>
+                <p className="text-2xl font-bold transform font-barrio" style={{ color: '#e98198' }}>
                   Built with ❤️ for better decisions
                 </p>
               </div>

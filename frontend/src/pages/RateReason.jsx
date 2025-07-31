@@ -120,8 +120,8 @@ export default function RateReason() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
           {/* Option A */}
           <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-2xl p-4 md:p-6 border-2 border-blue-200 shadow-xl">
-            <h2 className="text-xl md:text-2xl font-bold text-blue-700 mb-2 font-['Limelight','sans-serif']">Option A</h2>
-            <p className="text-base md:text-lg text-blue-900 mb-4 md:mb-6 font-['Lexend_Deca','sans-serif']">{decision.optionA.title}</p>
+            <h2 className="text-xl md:text-2xl font-bold text-[#FFF7E2] mb-2 font-['Limelight','sans-serif']">Option A</h2>
+            <p className="text-base md:text-lg text-[#FFF7E2] mb-4 md:mb-6 font-['Lexend_Deca','sans-serif']">{decision.optionA.title}</p>
             <div className="mb-3 md:mb-4">
               <h3 className="text-base md:text-lg font-semibold text-green-600 mb-2">Pros</h3>
               {optionAPros.length > 0 ? optionAPros.map(item => (
@@ -151,8 +151,8 @@ export default function RateReason() {
 
           {/* Option B */}
           <div className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 rounded-2xl p-4 md:p-6 border-2 border-pink-200 shadow-xl">
-            <h2 className="text-xl md:text-2xl font-bold text-pink-700 mb-2 font-['Limelight','sans-serif']">Option B</h2>
-            <p className="text-base md:text-lg text-pink-900 mb-4 md:mb-6 font-['Lexend_Deca','sans-serif']">{decision.optionB.title}</p>
+            <h2 className="text-xl md:text-2xl font-bold text-[#FFF7E2] mb-2 font-['Limelight','sans-serif']">Option B</h2>
+            <p className="text-base md:text-lg text-[#FFF7E2] mb-4 md:mb-6 font-['Lexend_Deca','sans-serif']">{decision.optionB.title}</p>
             <div className="mb-3 md:mb-4">
               <h3 className="text-base md:text-lg font-semibold text-green-600 mb-2">Pros</h3>
               {optionBPros.length > 0 ? optionBPros.map(item => (
