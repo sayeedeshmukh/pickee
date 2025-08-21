@@ -159,7 +159,7 @@ export default function MindsetForm() {
 
         {hfAnalysis && (
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-medium text-blue-800 mb-2">Hugging Face Analysis</h3>
+            <h3 className="font-medium text-blue-800 mb-2"> Analysis</h3>
             <p className="text-blue-700">{hfAnalysis.summary}</p>
             
             <div className="mt-4 grid grid-cols-2 gap-2">

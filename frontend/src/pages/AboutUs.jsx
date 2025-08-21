@@ -44,9 +44,6 @@ export default function AboutUs() {
 
             {/* What We Do */}
             <div className="mb-16 max-w-6xl mx-auto">
-              <h2 className="text-4xl font-bold mb-12" style={{ color: '#fff6e4' }}>
-                What We Do
-              </h2>
               <div className="grid md:grid-cols-3 gap-8">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
                   <div className="text-4xl mb-4">🤔</div>
@@ -82,16 +79,13 @@ export default function AboutUs() {
             <div className="mb-16 max-w-4xl mx-auto">
               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl">
                 <h2 className="text-3xl font-bold mb-6" style={{ color: '#5de7ff' }}>
-                  Our Story
-                </h2>
+                  How Orica Started
+                </h2> 
                 <p className="text-lg leading-relaxed mb-6" style={{ color: '#fff6e4' }}>
-                  Orica was born from a simple observation: people often struggle with decisions not because they lack intelligence, 
-                  but because they lack a structured way to think through their choices. We saw friends and family members 
-                  agonizing over decisions big and small, from career moves to daily choices.
+                  I've always struggled with decisions — big or small. I'd overthink, list pros and cons, ask friends… and still feel unsure. That's when I thought — what if there was a tool that could help me figure things out clearly, without the confusion?
                 </p>
                 <p className="text-lg leading-relaxed" style={{ color: '#fff6e4' }}>
-                  We combined the analytical power of AI with the intuitive nature of human decision-making to create a tool 
-                  that doesn't just give you answers, but helps you understand your own thinking process better.
+                  So I built <span className="font-semibold" style={{ color: '#5de7ff' }}>Orica</span> — a decision-making buddy that not only compares your options but also understands how you think. It mixes your input with a little AI magic to help you choose better.I've designed and developed Orica myself, and it's something super close to my heart. Can't wait to share it with the world soon!
                 </p>
               </div>
             </div>
@@ -155,22 +149,6 @@ export default function AboutUs() {
                 </button>
               </div>
             </div>
-
-            {/* Team Section */}
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl">
-                <h2 className="text-3xl font-bold mb-6" style={{ color: '#5de7ff' }}>
-                  Meet the Team
-                </h2>
-                <p className="text-lg leading-relaxed mb-6" style={{ color: '#fff6e4' }}>
-                  Orica is built by a passionate team of developers, designers, and decision-making enthusiasts. 
-                  We're committed to creating tools that make life's choices a little bit easier.
-                </p>
-                <p className="text-2xl font-bold transform font-barrio" style={{ color: '#e98198' }}>
-                  Built with ❤️ for better decisions
-                </p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -185,7 +163,7 @@ export default function AboutUs() {
       <footer className="bg-black/20 border-t border-white/10 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-400">
-            © 2024 Orica. Making decisions easier, one choice at a time.
+            © 2025 Orica. Making decisions easier, one choice at a time.
           </p>
         </div>
       </footer>
