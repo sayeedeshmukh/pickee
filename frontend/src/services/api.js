@@ -49,13 +49,13 @@ export const getUserDecisionHistory = (token) => {
 };
 
 export async function registerUser(data) {
-  return await axios.post('/api/auth/register', data);
+  return await API.post('/auth/register', data);
 }
 
 export async function loginUser(data) {
-  return await axios.post('/api/auth/login', data);
+  return await API.post('/auth/login', data);
 }
 
 export async function logoutUser() {
-  return await axios.post('/api/auth/logout');
+  return await API.post('/auth/logout');
 }
