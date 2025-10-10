@@ -10,7 +10,17 @@ const app = express();
 
 // Middlewares
 app.use(express.json());
-app.use(cors());
+
+const allowedOrigins = [
+  "http://localhost:5173", // for local dev (Vite default)
+  "https://your-frontend-name.netlify.app" // replace this with your actual Netlify URL
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
 
 // Root Route
 app.get('/', (req, res) => {
