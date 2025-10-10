@@ -13,7 +13,7 @@ app.use(express.json());
 
 const allowedOrigins = [
   "http://localhost:5173", // for local dev (Vite default)
-  "https://your-frontend-name.netlify.app" // replace this with your actual Netlify URL
+  "https://oricaa.netlify.app/" 
 ];
 
 app.use(cors({
