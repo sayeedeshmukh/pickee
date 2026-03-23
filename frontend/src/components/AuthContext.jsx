@@ -6,6 +6,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [guestName, setGuestNameState] = useState(() => localStorage.getItem('orica_guest_name') || '');
 
   useEffect(() => {
     if (token) {
@@ -16,6 +17,12 @@ export function AuthProvider({ children }) {
       setUser(null);
     }
   }, [token]);
+
+  const setGuestName = (name) => {
+    const trimmed = (name || '').trim();
+    setGuestNameState(trimmed);
+    localStorage.setItem('orica_guest_name', trimmed);
+  };
 
   const login = async (email, password) => {
     const res = await loginUser({ email, password });
@@ -33,7 +40,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, guestName, setGuestName, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1149,31 +1149,7 @@
     "mindset": "practical",
     "final_decision": "A"
   },
-  {
-    "topic": "Joining a startup vs joining a big MNC",
-    "option_a": "Joining a startup",
-    "option_b": "joining a big MNC",
-    "pros_a": [
-      "Easier to resell later — great for growth",
-      "Higher pay potential",
-      "More freedom and flexibility — great for growth"
-    ],
-    "cons_a": [
-      "Requires more maintenance",
-      "Higher monthly expenses"
-    ],
-    "pros_b": [
-      "Better learning opportunities",
-      "Lower monthly cost — less risky",
-      "More freedom and flexibility"
-    ],
-    "cons_b": [
-      "Lower team mentorship",
-      "Longer commute"
-    ],
-    "mindset": "practical",
-    "final_decision": "A"
-  },
+  
   {
     "topic": "Joining a startup vs joining a big MNC",
     "option_a": "Joining a startup",

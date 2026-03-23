@@ -19,7 +19,7 @@ export default function DecisionDetailsPage() {
   const [aiSuggestions, setAiSuggestions] = useState(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [loadingUserProsCons, setLoadingUserProsCons] = useState(false);
-  const [mindset, setMindset] = useState(null);
+  const [, setMindset] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 

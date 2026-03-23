@@ -5,6 +5,7 @@ import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
 import { getDecision, getProsConsByDecision, addProsCons, updateProsCons } from '../services/api';
 import Header from '../components/Header';
+import { requireClearText } from '../utils/inputValidation';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -36,8 +37,11 @@ export default function RateReason() {
   }, [decisionId]);
 
   const handleAddNew = async () => {
-    if (!newItem.text.trim()) {
-      toast.error('Please enter your reasoning');
+    const ok = requireClearText(newItem.text, {
+      minChars: 4,
+      onError: (msg) => toast.error(msg),
+    });
+    if (!ok) {
       return;
     }
     setIsSubmitting(true);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createMindset, classifyMindset } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { requireClearText } from '../utils/inputValidation';
 
 export default function MindsetForm() {
   const { id: decisionId } = useParams();
@@ -23,8 +24,11 @@ export default function MindsetForm() {
   };
 
   const analyzeWithHF = async () => {
-    if (!formData.notes.trim()) {
-      toast.error('Please enter some notes to analyze');
+    const ok = requireClearText(formData.notes, {
+      minChars: 5,
+      onError: (msg) => toast.error(msg),
+    });
+    if (!ok) {
       return;
     }
 

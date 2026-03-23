@@ -40,7 +40,6 @@ def preprocess_and_train():
     model.fit(X_train, y_train)
     acc = model.score(X_test, y_test)
     print("Test accuracy:", acc)
-    # save artifacts
     joblib.dump({"model": model, "tfidf": tfidf, "mindset_map": mindset_map}, OUT / "decision.pkl")
     print("Saved decision.pkl to", OUT)
     return acc

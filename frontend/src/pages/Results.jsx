@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getDecision, getDecisionAnalysis, getGeminiSummary } from '../services/api';
 import { toast } from 'react-hot-toast';
 import Header from '../components/Header';
+import { requireClearText, UNCLEAR_INPUT_MESSAGE } from '../utils/inputValidation';
 
 export default function Results() {
   const { id: decisionId } = useParams();
@@ -279,6 +280,23 @@ function StillNotSureSection({ analysis }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const okFeelings = requireClearText(form.feelings, {
+      minChars: 5,
+      onError: (msg) => toast.error(msg),
+    });
+    if (!okFeelings) return;
+
+    const confidenceNum = Number(form.confidence);
+    if (!Number.isFinite(confidenceNum) || confidenceNum < 1 || confidenceNum > 10) {
+      toast.error(UNCLEAR_INPUT_MESSAGE);
+      return;
+    }
+
+    if (!['A', 'B'].includes(form.userPreference)) {
+      toast.error(UNCLEAR_INPUT_MESSAGE);
+      return;
+    }
+
     setSubmitted(true);
     // Analyze the user's mindset based on their responses
     let detected = 'Balanced';
@@ -320,7 +338,6 @@ function StillNotSureSection({ analysis }) {
                 className="w-full rounded-xl border border-white/30 p-4 text-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white/10 backdrop-blur-sm"
                 style={{ color: '#fff7e4' }}
                 placeholder="e.g. anxious, excited, confused, etc."
-                required
               />
           </div>
           <div>
@@ -340,14 +357,11 @@ function StillNotSureSection({ analysis }) {
                           <input
                 type="number"
                 name="confidence"
-                min="1"
-                max="10"
                 value={form.confidence}
                 onChange={handleChange}
                 className="w-full rounded-xl border border-white/30 p-4 text-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white/10 backdrop-blur-sm"
                 style={{ color: '#fff7e4' }}
                 placeholder="e.g. 5"
-                required
               />
           </div>
           <div>
@@ -382,7 +396,6 @@ function StillNotSureSection({ analysis }) {
                 onChange={handleChange}
                 className="w-full rounded-xl border border-white/30 p-4 text-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white/10 backdrop-blur-sm"
                 style={{ color: '#fff7e4' }}
-                required
               >
                 <option value="" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>Select an option</option>
                 <option value="A" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>Option A</option>

@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       await login(form.email, form.password);
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Login failed. Please check your credentials.');
     } finally {
       setLoading(false);

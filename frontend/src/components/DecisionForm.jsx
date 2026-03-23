@@ -1,16 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createDecision } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { useAuth } from './AuthContext';
+import { requireClearText } from '../utils/inputValidation';
 
-export default function DecisionForm({ onDecisionCreated, token }) {
+export default function DecisionForm({ onDecisionCreated }) {
+  const { token, user, guestName } = useAuth();
   const [formData, setFormData] = useState({
     optionA: { title: '', description: '' },
     optionB: { title: '', description: '' },
-    userName: '',
+    userName: (token && user?.username) ? user.username : (guestName || ''),
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (token && user?.username) {
+      setFormData((prev) => ({ ...prev, userName: user.username }));
+      return;
+    }
+    if (!token && guestName) {
+      setFormData((prev) => ({ ...prev, userName: guestName }));
+    }
+  }, [token, user?.username, guestName]);
+
+  const shouldShowGuestNameInput = !token && !guestName;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,7 +45,25 @@ export default function DecisionForm({ onDecisionCreated, token }) {
     setIsSubmitting(true);
     
     try {
-      console.log(" Submitting decision form with:", formData);
+      const okUserName = requireClearText(formData.userName, {
+        minChars: 2,
+        onError: (msg) => toast.error(msg),
+      });
+      if (!okUserName) return;
+
+      const okOptionA = requireClearText(formData.optionA.title, {
+        minChars: 3,
+        onError: (msg) => toast.error(msg),
+      });
+      if (!okOptionA) return;
+
+      const okOptionB = requireClearText(formData.optionB.title, {
+        minChars: 3,
+        onError: (msg) => toast.error(msg),
+      });
+      if (!okOptionB) return;
+
+      console.log(' Submitting decision form with:', formData);
 
       const response = await createDecision(formData, token);
       console.log(" Decision created:", response.data);
@@ -52,19 +85,19 @@ export default function DecisionForm({ onDecisionCreated, token }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* User Name */}
-      <div className="text-center">
-        <label className="block text-2xl font-semibold text-white mb-4">What's your name?</label>
-        <input
-          type="text"
-          name="userName"
-          value={formData.userName}
-          onChange={handleChange}
-          className="w-full max-w-md mx-auto px-6 py-4 text-lg bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
-          placeholder="Enter your name here!"
-          required
-        />
-      </div>
+      {!token && shouldShowGuestNameInput && (
+        <div className="text-center">
+          <label className="block text-2xl font-semibold text-white mb-4">What's your name?</label>
+          <input
+            type="text"
+            name="userName"
+            value={formData.userName}
+            onChange={handleChange}
+            className="w-full max-w-md mx-auto px-6 py-4 text-lg bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"
+            placeholder="Enter your name here!"
+          />
+        </div>
+      )}
 
       {/* Options Section */}
       <div className="space-y-8">
@@ -92,7 +125,6 @@ export default function DecisionForm({ onDecisionCreated, token }) {
                   onChange={handleChange}
                   className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="e.g., Take the new job offer"
-                  required
                 />
               </div>
               
@@ -129,7 +161,6 @@ export default function DecisionForm({ onDecisionCreated, token }) {
                   onChange={handleChange}
                   className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                   placeholder="e.g., Stay at current job"
-                  required
                 />
               </div>
               
