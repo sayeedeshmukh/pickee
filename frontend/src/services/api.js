@@ -56,6 +56,12 @@ export async function loginUser(data) {
   return await API.post('/auth/login', data);
 }
 
+// Google One Tap / GIS provides an `id_token` (JWT). We verify it server-side.
+export async function googleLogin(idToken) {
+  const res = await API.post('/auth/google-login', { id_token: idToken });
+  return res.data;
+}
+
 export async function logoutUser() {
   return await API.post('/auth/logout');
 }
