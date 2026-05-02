@@ -7,6 +7,7 @@ function analyzeDecision({ prosCons }) {
     let consA = [];
     let prosB = [];
     let consB = [];
+    let winner;
 
     // --- 1. Add up ratings for pros/cons and collect reasons ---
     for (const item of prosCons) {
@@ -30,6 +31,7 @@ function analyzeDecision({ prosCons }) {
     // --- Decide which option is better (always by score) ---
     let recommendedOption = scoreA > scoreB ? 'Option A' : 'Option B';
     let winningPros, winningCons, losingPros, losingCons, winningLabel, losingLabel;
+    
     if (recommendedOption === 'Option A') {
         winningPros = prosA; winningCons = consA; losingPros = prosB; losingCons = consB;
         winningLabel = 'Option A'; losingLabel = 'Option B';
@@ -53,6 +55,16 @@ function analyzeDecision({ prosCons }) {
     }
     reasoning += ` Remember, this isn't just about logic—it's about what feels right for you. Trust your process and take pride in making a thoughtful decision!`;
 
+    // --- Calculate Winner for Backend Tests ---
+    if (scoreA > scoreB) {
+        winner = 'A';
+    } else if (scoreB > scoreA) {
+        winner = 'B';
+    } else {
+        winner = 'Tie';
+    }
+
+    // --- ONE SINGLE RETURN STATEMENT ---
     return {
         recommendedOption,
         emotionalVsPractical: leaning,
@@ -60,7 +72,12 @@ function analyzeDecision({ prosCons }) {
         scores: {
             optionA: scoreA,
             optionB: scoreB
-        }
+        },
+        scoreA,
+        scoreB,
+        winner,
+        prosA,
+        prosB
     };
 }
 
