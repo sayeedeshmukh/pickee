@@ -11,8 +11,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <AuthProvider>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
       <StartupExperience>
-        <App />
-      </StartupExperience>
-    </GoogleOAuthProvider>
+    <App />
+  </StartupExperience>
+  </GoogleOAuthProvider>
   </AuthProvider>
 );

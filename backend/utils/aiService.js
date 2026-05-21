@@ -1,10 +1,10 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 require('dotenv').config();
 
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
-console.log("Gemini API Key loaded:", API_KEY ? "✅ Yes" : "❌ No");
+console.log("Gemini API Key loaded:", API_KEY ? "Yes" : "No");
 
 if (!API_KEY) {
   console.error("GEMINI_API_KEY is not set in environment variables.");
@@ -12,9 +12,96 @@ if (!API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+// Default to a model id that exists on the current v1beta API.
+// You can override via GEMINI_MODEL (e.g. "gemini-2.5-flash").
+const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const model = genAI.getGenerativeModel({ model: modelName });
+
+/** Forces valid JSON shape from Gemini (avoids truncated / invalid JSON strings). */
+const prosConsResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    optionA: {
+      type: SchemaType.OBJECT,
+      properties: {
+        pros: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          minItems: 3,
+          maxItems: 3,
+        },
+        cons: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          minItems: 3,
+          maxItems: 3,
+        },
+      },
+      required: ['pros', 'cons'],
+    },
+    optionB: {
+      type: SchemaType.OBJECT,
+      properties: {
+        pros: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          minItems: 3,
+          maxItems: 3,
+        },
+        cons: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          minItems: 3,
+          maxItems: 3,
+        },
+      },
+      required: ['pros', 'cons'],
+    },
+  },
+  required: ['optionA', 'optionB'],
+};
+
+const decisionAnalysisResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    recommendedOption: { type: SchemaType.STRING },
+    summary: { type: SchemaType.STRING },
+    strengths: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      minItems: 2,
+      maxItems: 4,
+    },
+    considerations: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      minItems: 2,
+      maxItems: 4,
+    },
+  },
+  required: ['recommendedOption', 'summary', 'strengths', 'considerations'],
+};
+
+function parseGeminiJson(rawText) {
+  const jsonString = extractJsonFromString(rawText);
+  if (!jsonString) {
+    const preview = (rawText || '').slice(0, 800);
+    throw new Error(`Could not extract valid JSON from Gemini response. Preview: ${preview}`);
+  }
+  try {
+    return JSON.parse(jsonString);
+  } catch (e) {
+    const repaired = escapeNewlinesInsideJsonStrings(balanceCurlyBraces(jsonString));
+    return JSON.parse(repaired);
+  }
+}
 
 function extractJsonFromString(text) {
+  const trimmed = (text || '').trim();
+  // If the model returned pure JSON (common with responseMimeType), use it directly.
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    return trimmed;
+  }
   const markdownMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
   if (markdownMatch && markdownMatch[1]) {
     return markdownMatch[1].trim();
@@ -23,30 +110,106 @@ function extractJsonFromString(text) {
   if (jsonMatch && jsonMatch[0]) {
     return jsonMatch[0].trim();
   }
+  // Last resort: if it *looks* like JSON but is truncated, try returning the trimmed text
+  // and let the downstream repair logic attempt to balance braces/newlines.
+  if (trimmed.startsWith('{')) {
+    return trimmed;
+  }
   return null;
+}
+
+function escapeNewlinesInsideJsonStrings(jsonLike) {
+  // Gemini occasionally returns JSON-like text with literal newlines inside quoted strings.
+  // This makes it invalid JSON. We repair by escaping CR/LF/TAB while inside quotes.
+  let out = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < jsonLike.length; i++) {
+    const ch = jsonLike[i];
+
+    if (escaped) {
+      out += ch;
+      escaped = false;
+      continue;
+    }
+
+    if (ch === '\\') {
+      out += ch;
+      escaped = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      out += ch;
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      if (ch === '\n') {
+        out += '\\n';
+        continue;
+      }
+      if (ch === '\r') {
+        out += '\\r';
+        continue;
+      }
+      if (ch === '\t') {
+        out += '\\t';
+        continue;
+      }
+    }
+
+    out += ch;
+  }
+
+  return out;
+}
+
+function balanceCurlyBraces(jsonLike) {
+  const open = (jsonLike.match(/\{/g) || []).length;
+  const close = (jsonLike.match(/\}/g) || []).length;
+  if (close >= open) return jsonLike;
+  return jsonLike + '}'.repeat(open - close);
 }
 
 async function generateProsCons(optionA, optionB) {
   try {
-    const prompt = `Imagine you're helping a close friend talk through a decision. Compare these two options and generate 3 pros and 3 cons for each, but keep it super casual, friendly, and real—like you're chatting over coffee. Use a conversational, lively tone. Avoid sounding like a robot or a formal report. Make each point feel personal, relatable, and easy to read.
+    const prompt = `You are helping someone compare two options head-to-head. Generate exactly 3 pros and 3 cons for EACH option, but every item must be RELATIVE TO THE OTHER OPTION — not standalone facts.
 
-Option A: ${optionA}
-Option B: ${optionB}
+Option A: "${optionA}"
+Option B: "${optionB}"
+
+Meaning of each list:
+- optionA.pros = ways "${optionA}" is BETTER than "${optionB}" (advantages of A vs B)
+- optionA.cons = ways "${optionA}" is WORSE than "${optionB}" (trade-offs or downsides of A vs B)
+- optionB.pros = ways "${optionB}" is BETTER than "${optionA}"
+- optionB.cons = ways "${optionB}" is WORSE than "${optionA}"
+
+Return ONLY valid JSON (no markdown, no extra text).
+Constraints for every array item:
+- must be a short single-line comparative string (no newline characters)
+- max 100 characters
+- must clearly compare the two options (use "than", "compared to", "vs", "unlike", or mention the other option by name)
+- BAD (standalone): "Lower rent", "Good weather", "Friends nearby"
+- GOOD (comparative): "Lower rent than staying in ${optionB}", "Warmer climate than ${optionB}", "Closer to family than ${optionA}"
 
 Requirements:
-- Be specific and concrete
-- Avoid generic statements
-- Use casual, friendly, and even playful language
-- Make it sound like real advice from a friend
-- Format as valid JSON exactly like this (ensure all keys are present, even if arrays are empty):
+- Be specific to these two options — not generic life advice
+- Use casual, friendly language like a thoughtful friend
+- Each point must make sense only in the context of choosing between A and B
+- Do not duplicate the same idea across pros and cons or across A and B
+- optionA items should reference or imply "${optionB}" where natural; optionB items should reference "${optionA}"
+- Format as valid JSON exactly like this:
 {
   "optionA": { 
-    "pros": ["casual pro 1", "casual pro 2", "casual pro 3"],
-    "cons": ["casual con 1", "casual con 2", "casual con 3"] 
+    "pros": ["comparative pro vs B 1", "comparative pro vs B 2", "comparative pro vs B 3"],
+    "cons": ["comparative con vs B 1", "comparative con vs B 2", "comparative con vs B 3"] 
   },
   "optionB": {
-    "pros": ["casual pro 1", "casual pro 2", "casual pro 3"],
-    "cons": ["casual con 1", "casual con 2", "casual con 3"]
+    "pros": ["comparative pro vs A 1", "comparative pro vs A 2", "comparative pro vs A 3"],
+    "cons": ["comparative con vs A 1", "comparative con vs A 2", "comparative con vs A 3"]
   }
 }`;
     
@@ -54,10 +217,11 @@ Requirements:
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.9,
+        responseSchema: prosConsResponseSchema,
+        temperature: 0.35,
         topK: 40,
-        topP: 0.98,
-        maxOutputTokens: 800,
+        topP: 0.95,
+        maxOutputTokens: 1400,
       },
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
@@ -70,12 +234,7 @@ Requirements:
     const response = await result.response;
     const rawText = response.text();
 
-    const jsonString = extractJsonFromString(rawText);
-    if (!jsonString) {
-      throw new Error("Could not extract valid JSON from Gemini response.");
-    }
-
-    const parsedResult = JSON.parse(jsonString);
+    const parsedResult = parseGeminiJson(rawText);
     
     if (!parsedResult.optionA || !Array.isArray(parsedResult.optionA.pros) || !Array.isArray(parsedResult.optionA.cons) ||
         !parsedResult.optionB || !Array.isArray(parsedResult.optionB.pros) || !Array.isArray(parsedResult.optionB.cons)) {
@@ -88,61 +247,166 @@ Requirements:
     return {
       optionA: {
         pros: [
-          "AI couldn't come up with casual pros for Option A. Try thinking about what makes it fun or easy!",
-          "Consider what feels right for you."
+          `Think how "${optionA}" beats "${optionB}" — e.g. lower cost than ${optionB}`,
+          `What would you gain by picking ${optionA} over ${optionB}?`,
+          `Add a pro that only makes sense vs ${optionB}`,
         ],
         cons: [
-          "AI couldn't come up with casual cons for Option A. Maybe chat with a friend for more ideas!",
-          "Think about what might bug you."
-        ]
+          `What does ${optionA} lose compared to ${optionB}?`,
+          `Trade-off of ${optionA} vs staying with ${optionB}`,
+          `Add a con that references ${optionB}`,
+        ],
       },
       optionB: {
         pros: [
-          "AI couldn't come up with casual pros for Option B. Try thinking about what makes it fun or easy!",
-          "Consider what feels right for you."
+          `Think how "${optionB}" beats "${optionA}" — e.g. stability vs ${optionA}`,
+          `What would you gain by picking ${optionB} over ${optionA}?`,
+          `Add a pro that only makes sense vs ${optionA}`,
         ],
         cons: [
-          "AI couldn't come up with casual cons for Option B. Maybe chat with a friend for more ideas!",
-          "Think about what might bug you."
-        ]
-      }
+          `What does ${optionB} lose compared to ${optionA}?`,
+          `Trade-off of ${optionB} vs choosing ${optionA}`,
+          `Add a con that references ${optionA}`,
+        ],
+      },
     };
   }
 }
 
+function computeOptionScores(prosConsData) {
+  const scoreA = prosConsData
+    .filter((pc) => pc.option === 'A')
+    .reduce((sum, pc) => sum + (pc.rating || 0), 0);
+  const scoreB = prosConsData
+    .filter((pc) => pc.option === 'B')
+    .reduce((sum, pc) => sum + (pc.rating || 0), 0);
+  return { scoreA, scoreB };
+}
+
+function resolveWinnerFromScores(scoreA, scoreB, titleA, titleB) {
+  if (scoreA > scoreB) return { winner: titleA, loser: titleB, isTie: false };
+  if (scoreB > scoreA) return { winner: titleB, loser: titleA, isTie: false };
+  return { winner: null, loser: null, isTie: true };
+}
+
+function formatProsConsForPrompt(prosConsData, option, type, otherTitle) {
+  const label = type === 'pro' ? 'Pros' : 'Cons';
+  const items = prosConsData
+    .filter((pc) => pc.option === option && pc.type === type)
+    .map((pc) => `${pc.text} (importance ${pc.rating})`);
+  if (items.length === 0) return `${label} vs "${otherTitle}": None`;
+  return `${label} vs "${otherTitle}": ${items.join('; ')}`;
+}
+
+function finalizeDecisionAnalysis(parsed, { titleA, titleB, scoreA, scoreB, winner, isTie }) {
+  const recommendedOption = isTie
+    ? `Tie between "${titleA}" and "${titleB}"`
+    : winner;
+
+  const result = {
+    ...parsed,
+    recommendedOption,
+    scores: { optionA: scoreA, optionB: scoreB },
+    isTie,
+    reasons: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+  };
+
+  return result;
+}
+
+function buildScoreBasedFallback({ titleA, titleB, scoreA, scoreB, prosConsData, isTie, winner, loser }) {
+  if (isTie) {
+    return {
+      recommendedOption: `Tie between "${titleA}" and "${titleB}"`,
+      summary: `Your importance ratings total ${scoreA} for "${titleA}" and ${scoreB} for "${titleB}" — a tie. Revisit which comparative factors matter most, or adjust ratings if something feels off.`,
+      strengths: [
+        `"${titleA}" has meaningful advantages in your list`,
+        `"${titleB}" also scores well on what matters to you`,
+      ],
+      considerations: [
+        'Both options are equally weighted by your ratings',
+        'Focus on the highest-rated individual points on each side',
+      ],
+      scores: { optionA: scoreA, optionB: scoreB },
+      isTie: true,
+      reasons: [
+        `"${titleA}" has meaningful advantages in your list`,
+        `"${titleB}" also scores well on what matters to you`,
+      ],
+    };
+  }
+
+  const winnerOption = winner === titleA ? 'A' : 'B';
+  const topPros = prosConsData
+    .filter((pc) => pc.option === winnerOption && pc.type === 'pro')
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 2)
+    .map((pc) => pc.text);
+
+  return {
+    recommendedOption: winner,
+    summary: `Based on your importance ratings, "${winner}" scores higher (${winner === titleA ? scoreA : scoreB} vs ${loser === titleA ? scoreA : scoreB} for "${loser}"). Your comparative pros and cons favor this choice overall.`,
+    strengths: topPros.length > 0
+      ? topPros
+      : [`"${winner}" aligns better with your rated priorities than "${loser}"`],
+    considerations: prosConsData
+      .filter((pc) => pc.option === winnerOption && pc.type === 'con')
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 2)
+      .map((pc) => pc.text)
+      .concat([`Trade-offs vs "${loser}" still matter — review cons before deciding`])
+      .slice(0, 3),
+    scores: { optionA: scoreA, optionB: scoreB },
+    isTie: false,
+    reasons: topPros.length > 0
+      ? topPros
+      : [`"${winner}" aligns better with your rated priorities than "${loser}"`],
+  };
+}
+
 // Renamed getGeminiSummary to generateEfficientChoice for consistency
 async function generateEfficientChoice(decisionData, prosConsData, mindsetData) {
+  const titleA = decisionData.optionA.title;
+  const titleB = decisionData.optionB.title;
+  const { scoreA, scoreB } = computeOptionScores(prosConsData);
+  const { winner, loser, isTie } = resolveWinnerFromScores(scoreA, scoreB, titleA, titleB);
+
+  const scoreInstruction = isTie
+    ? `SCORING (authoritative): "${titleA}" = ${scoreA}, "${titleB}" = ${scoreB} — TIED. Explain the tie fairly; do not pick a single winner.`
+    : `SCORING (authoritative): "${titleA}" = ${scoreA}, "${titleB}" = ${scoreB}. The user-rated winner is "${winner}". You MUST recommend exactly "${winner}". strengths = why "${winner}" wins vs "${loser}" (pros/advantages only). considerations = trade-offs/risks of "${winner}" vs "${loser}" (cons only).`;
+
   try {
-    const prompt = `Given the following decision and its pros/cons, provide an objective analysis focusing on strengths of the recommended option and overall considerations.
-    
-    Decision:
-    Option A: ${decisionData.optionA.title}
-    Pros for Option A: ${prosConsData.filter(pc => pc.option === 'A' && pc.type === 'pro').map(pc => pc.text).join(', ') || 'None'}
-    Cons for Option A: ${prosConsData.filter(pc => pc.option === 'A' && pc.type === 'con').map(pc => pc.text).join(', ') || 'None'}
+    const prompt = `Analyze this head-to-head decision. Each pro/con compares one option against the other (relative advantages/trade-offs), not standalone facts.
 
-    Option B: ${decisionData.optionB.title}
-    Pros for Option B: ${prosConsData.filter(pc => pc.option === 'B' && pc.type === 'pro').map(pc => pc.text).join(', ') || 'None'}
-    Cons for Option B: ${prosConsData.filter(pc => pc.option === 'B' && pc.type === 'con').map(pc => pc.text).join(', ') || 'None'}
+${scoreInstruction}
 
-    ${mindsetData ? `Mindset considerations: ${mindsetData.description}` : ''}
+Option A: "${titleA}"
+Option B: "${titleB}"
 
-    Based on these, recommend one option and provide a concise summary, listing key strengths of the recommended option and overall considerations.
-    Format as valid JSON exactly like this:
-    {
-      "recommendedOption": "Option A Title" or "Option B Title",
-      "summary": "A concise summary of the analysis.",
-      "strengths": ["Strength 1", "Strength 2"],
-      "considerations": ["Consideration 1", "Consideration 2"]
-    }`;
+${formatProsConsForPrompt(prosConsData, 'A', 'pro', titleB)}
+${formatProsConsForPrompt(prosConsData, 'A', 'con', titleB)}
+${formatProsConsForPrompt(prosConsData, 'B', 'pro', titleA)}
+${formatProsConsForPrompt(prosConsData, 'B', 'con', titleA)}
+${mindsetData ? `Mindset: ${mindsetData.description}` : ''}
+
+Return ONLY valid JSON.
+${isTie
+    ? `recommendedOption must acknowledge the tie between "${titleA}" and "${titleB}".`
+    : `recommendedOption must be exactly "${winner}".`}
+strengths = ONLY advantages/pros for why the recommended option beats the other (comparative, positive).
+considerations = ONLY trade-offs/cons/risks for the recommended option vs the other (comparative, cautious).
+Do NOT put pros in considerations or cons in strengths.
+Each strengths/considerations item: single line, max 120 characters.`;
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.5,
+        responseSchema: decisionAnalysisResponseSchema,
+        temperature: 0.35,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 800,
+        maxOutputTokens: 1400,
       },
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
@@ -154,27 +418,26 @@ async function generateEfficientChoice(decisionData, prosConsData, mindsetData) 
 
     const response = await result.response;
     const rawText = response.text();
+    const parsedResult = parseGeminiJson(rawText);
 
-    const jsonString = extractJsonFromString(rawText);
-    if (!jsonString) {
-      throw new Error("Could not extract valid JSON from Gemini summary response.");
-    }
-    const parsedResult = JSON.parse(jsonString);
-
-    if (!parsedResult.recommendedOption || !parsedResult.summary || !Array.isArray(parsedResult.strengths) || !Array.isArray(parsedResult.considerations)) {
+    if (!parsedResult.summary || !Array.isArray(parsedResult.strengths) || !Array.isArray(parsedResult.considerations)) {
       throw new Error("Invalid Gemini summary response format.");
     }
 
-    return parsedResult;
+    return finalizeDecisionAnalysis(parsedResult, { titleA, titleB, scoreA, scoreB, winner, isTie });
 
   } catch (error) {
     console.error('Gemini generateEfficientChoice error:', error);
-    return {
-      recommendedOption: "No recommendation available",
-      summary: "AI analysis could not be generated at this time.",
-      strengths: ["N/A"],
-      considerations: ["N/A"]
-    };
+    return buildScoreBasedFallback({
+      titleA,
+      titleB,
+      scoreA,
+      scoreB,
+      prosConsData,
+      isTie,
+      winner,
+      loser,
+    });
   }
 }
 

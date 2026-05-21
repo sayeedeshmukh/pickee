@@ -2,19 +2,23 @@ const express = require('express');
 const router = express.Router();
 
 const { createDecision, getDecision, getUserDecisions } = require('../controllers/decisionController');
+const { getDecisionAnalysis } = require('../controllers/analysisController');
+const { getStillNotSure, submitStillNotSure } = require('../controllers/stillNotSureController');
 const auth = require('../middlewares/auth');
 
-// these should be valid FUNCTIONS
+// Create decision (auth optional)
 router.post('/', authOptional, createDecision);
-router.get('/:id', getDecision);
+
+// Authenticated user history must be registered BEFORE "/:id"
 router.get('/user/history', auth, getUserDecisions);
 
-module.exports = router;
-
-
-const { getDecisionAnalysis } = require('../controllers/analysisController');
-
+// Nested routes must be registered BEFORE "/:id"
 router.get('/:id/analysis', getDecisionAnalysis);
+router.get('/:id/still-not-sure', getStillNotSure);
+router.post('/:id/still-not-sure', submitStillNotSure);
+
+// Fetch a decision by id (keep last, it's the most generic)
+router.get('/:id', getDecision);
 
 module.exports = router;
 

@@ -29,22 +29,37 @@ function analyzeDecision({ prosCons }) {
     }
 
     // --- Decide which option is better (always by score) ---
-    let recommendedOption = scoreA > scoreB ? 'Option A' : 'Option B';
+    let recommendedOption;
+    if (scoreA > scoreB) {
+        recommendedOption = 'Option A';
+    } else if (scoreB > scoreA) {
+        recommendedOption = 'Option B';
+    } else {
+        recommendedOption = 'Tie';
+    }
     let winningPros, winningCons, losingPros, losingCons, winningLabel, losingLabel;
     
     if (recommendedOption === 'Option A') {
         winningPros = prosA; winningCons = consA; losingPros = prosB; losingCons = consB;
         winningLabel = 'Option A'; losingLabel = 'Option B';
-    } else {
+    } else if (recommendedOption === 'Option B') {
         winningPros = prosB; winningCons = consB; losingPros = prosA; losingCons = consA;
         winningLabel = 'Option B'; losingLabel = 'Option A';
+    } else {
+        winningPros = []; winningCons = []; losingPros = []; losingCons = [];
+        winningLabel = 'Neither option'; losingLabel = '';
     }
 
     let leaning = emotionalWeight > practicalWeight ? 'Emotional' :
                 practicalWeight > emotionalWeight ? 'Practical' : 'Balanced';
 
     // --- Generate personal, motivational reasoning ---
-    let reasoning = `Based on your ratings, ${winningLabel} stands out as the stronger choice for you right now. `;
+    let reasoning;
+    if (recommendedOption === 'Tie') {
+        reasoning = 'Based on your ratings, both options are tied. Consider which factors matter most to you, or adjust your ratings if something feels off.';
+    } else {
+        reasoning = `Based on your ratings, ${winningLabel} stands out as the stronger choice for you right now. `;
+    }
     if (winningPros.length > 0) {
         reasoning += `What really makes this option shine is: "${winningPros[0]}"`;
         if (winningPros.length > 1) reasoning += `, and also: "${winningPros[1]}"`;
@@ -53,7 +68,9 @@ function analyzeDecision({ prosCons }) {
     if (winningCons.length > 0) {
         reasoning += `Of course, every choice has its challenges, like: "${winningCons[0]}". But your overall ratings show you believe the positives outweigh the negatives.`;
     }
-    reasoning += ` Remember, this isn't just about logic—it's about what feels right for you. Trust your process and take pride in making a thoughtful decision!`;
+    if (recommendedOption !== 'Tie') {
+        reasoning += ` Remember, this isn't just about logic—it's about what feels right for you. Trust your process and take pride in making a thoughtful decision!`;
+    }
 
     // --- Calculate Winner for Backend Tests ---
     if (scoreA > scoreB) {

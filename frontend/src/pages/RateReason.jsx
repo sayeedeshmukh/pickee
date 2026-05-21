@@ -140,9 +140,9 @@ export default function RateReason() {
             </div>
             {/* Add new pro/con for Option A */}
             <div className="mt-6 md:mt-8">
-              <h4 className="text-sm md:text-md font-semibold text-[#262C38] mb-2">Add to Option A</h4>
+              <h4 className="text-sm md:text-md font-semibold text-[#FFF7E2] mb-2">Add to Option A</h4>
               <div className="flex flex-col md:flex-row gap-2 mb-2">
-                <select value={newItem.type} onChange={e => setNewItem({ ...newItem, type: e.target.value, option: 'A' })} className="rounded-lg px-3 py-2 bg-white/20 text-[#262C38]">
+                <select value={newItem.type} onChange={e => setNewItem({ ...newItem, type: e.target.value, option: 'A' })} className="rounded-lg px-3 py-2 bg-white/20 text-[#FFF7E2]">
                   <option value="pro">Pro</option>
                   <option value="con">Con</option>
                 </select>
@@ -171,9 +171,9 @@ export default function RateReason() {
             </div>
             {/* Add new pro/con for Option B */}
             <div className="mt-6 md:mt-8">
-              <h4 className="text-sm md:text-md font-semibold text-[#262C38] mb-2">Add to Option B</h4>
+              <h4 className="text-sm md:text-md font-semibold text-[#FFF7E2] mb-2">Add to Option B</h4>
               <div className="flex flex-col md:flex-row gap-2 mb-2">
-                <select value={newItem.type} onChange={e => setNewItem({ ...newItem, type: e.target.value, option: 'B' })} className="rounded-lg px-3 py-2 bg-white/20 text-[#262C38]">
+                <select value={newItem.type} onChange={e => setNewItem({ ...newItem, type: e.target.value, option: 'B' })} className="rounded-lg px-3 py-2 bg-white/20 text-[#FFF7E2]">
                   <option value="pro">Pro</option>
                   <option value="con">Con</option>
                 </select>
@@ -191,13 +191,13 @@ export default function RateReason() {
             onClick={() => navigate('/')}
             className="px-8 py-3 text-[#262C38] bg-[#FFF7E2] rounded-lg font-bold hover:bg-[#48bac4] hover:text-white text-lg shadow-md w-full md:w-auto"
           >
-            ← Back to Home
+            Back to Home
           </button>
           <button
             onClick={() => navigate(`/decisions/${decisionId}/results`)}
             className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 text-lg shadow-lg w-full md:w-auto"
           >
-            View Results →
+            View Results
           </button>
         </div>
       </div>

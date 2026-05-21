@@ -33,7 +33,7 @@ export default function Profile() {
         <div className="w-full max-w-3xl mx-auto p-4 sm:p-8 rounded-3xl shadow-2xl min-h-[60vh] flex flex-col gap-8 border border-white/30 backdrop-blur-md" style={{background: 'rgba(24,33,50,0.75)'}}>
           <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
             <div className="w-24 h-24 rounded-full flex items-center justify-center text-5xl font-bold border-4 shadow shrink-0" style={{ background: '#5de7ff', color: '#fff6e4', borderColor: '#e98198' }}>
-              <span role="img" aria-label="profile">👤</span>
+              <span aria-hidden="true">Profile</span>
             </div>
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-4xl md:text-5xl font-limelight mb-2 text-white drop-shadow" style={{ color: '#fff' }}>{user.username}</h2>

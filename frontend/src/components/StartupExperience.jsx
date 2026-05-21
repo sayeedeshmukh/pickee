@@ -2,25 +2,23 @@ import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import GuestNameModal from './GuestNameModal';
 
-const LOADING_MS = 5000;
-const INTRO_SHOWN_KEY = 'orica_intro_shown_v1';
+const SPLASH_MS = 3000;
+const FADE_MS = 800;
+/** Start crossfade slightly before the logo animation finishes */
+const FADE_START_MS = SPLASH_MS - 500;
 
-function StartupLoader({ progress }) {
+function StartupSplash({ exiting }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center px-4">
+    <div className="flex flex-col items-center justify-center px-4 flex-1">
       <div className="w-full max-w-md text-center">
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500" />
+        <div className="orica-splash-logo select-none">
+          <span className={`orica-splash-word${exiting ? ' orica-splash-word--exit' : ''}`}>ORICA</span>
         </div>
-
-        <div className="bg-white/10 border border-white/20 rounded-full h-3 overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-pink-500 to-cyan-400"
-            style={{ width: `${progress}%`, transition: 'width 80ms linear' }}
-          />
+        <div
+          className={`mt-5 text-white/70 text-xs sm:text-sm tracking-wide orica-splash-tagline${exiting ? ' orica-splash-tagline--exit' : ''}`}
+        >
+          Smarter decisions, simplified.
         </div>
-        <div className="mt-4 text-white/80 text-sm sm:text-base">{progress}%</div>
-        <div className="mt-2 text-white/60 text-xs sm:text-sm">Choices don't have to be hard.</div>
       </div>
     </div>
   );
@@ -28,61 +26,42 @@ function StartupLoader({ progress }) {
 
 export default function StartupExperience({ children }) {
   const { token, guestName } = useAuth();
-  const [loadingDone, setLoadingDone] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  const [shouldAnimateIntro, setShouldAnimateIntro] = useState(false);
-  const [introActive, setIntroActive] = useState(false);
+  const [appVisible, setAppVisible] = useState(false);
+  const [splashMounted, setSplashMounted] = useState(true);
+  const [splashExiting, setSplashExiting] = useState(false);
 
   useEffect(() => {
-    // Exactly 5 seconds: drive the progress UI via rAF, and swap views via timeout.
-    const start = performance.now();
-    let rafId = 0;
+    const fadeStartId = setTimeout(() => {
+      setSplashExiting(true);
+      setAppVisible(true);
+    }, FADE_START_MS);
 
-    const tick = () => {
-      const elapsed = performance.now() - start;
-      const pct = Math.min(100, Math.round((elapsed / LOADING_MS) * 100));
-      setProgress(pct);
-
-      if (elapsed < LOADING_MS) rafId = requestAnimationFrame(tick);
-    };
-
-    rafId = requestAnimationFrame(tick);
-    const timeoutId = setTimeout(() => setLoadingDone(true), LOADING_MS);
+    const splashEndId = setTimeout(() => {
+      setSplashMounted(false);
+    }, FADE_START_MS + FADE_MS);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
+      clearTimeout(fadeStartId);
+      clearTimeout(splashEndId);
     };
   }, []);
 
-  useEffect(() => {
-    try {
-      const alreadyShown = localStorage.getItem(INTRO_SHOWN_KEY);
-      if (!alreadyShown) {
-        localStorage.setItem(INTRO_SHOWN_KEY, '1');
-        setShouldAnimateIntro(true);
-      }
-    } catch {
-      // If storage is blocked, just skip the one-time intro animation.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!loadingDone || !shouldAnimateIntro) return;
-    // Small delay so the intro animation triggers after the loader view unmounts.
-    const id = setTimeout(() => setIntroActive(true), 50);
-    return () => clearTimeout(id);
-  }, [loadingDone, shouldAnimateIntro]);
-
-  if (!loadingDone) {
-    return <StartupLoader progress={progress} />;
-  }
-
   return (
-    <div className={introActive ? 'orica-intro-animate' : ''}>
-      {!token && !guestName ? <GuestNameModal /> : null}
-      {children}
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className={`orica-app-enter${appVisible ? ' orica-app-enter--visible' : ''}`}>
+        {children}
+      </div>
+
+      {splashMounted && (
+        <div
+          className={`orica-splash-overlay${splashExiting ? ' orica-splash-overlay--exit' : ''}`}
+          aria-hidden={splashExiting}
+        >
+          <StartupSplash exiting={splashExiting} />
+        </div>
+      )}
+
+      {!splashMounted && !token && !guestName ? <GuestNameModal /> : null}
     </div>
   );
 }

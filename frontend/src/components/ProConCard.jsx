@@ -10,39 +10,57 @@ export default function ProConCard({ item, decisionId, onUpdate, onRatingChange 
 
   const handleSave = async () => {
     try {
-      await addProsCons({
-        decisionId,
-        option: item.option,
-        type: item.type,
-        text,
-        rating,
-        source: 'user', // Always 'user' for explicitly saved items
-      });
-      toast.success(`${item.type === 'pro' ? 'Pro' : 'Con'} saved!`);
+      if (item._id) {
+        // Edit existing row (including AI-generated): update in place, mark as user-authored
+        await updateProsCons(item._id, {
+          text,
+          rating,
+          source: 'user',
+        });
+        toast.success(`${item.type === 'pro' ? 'Pro' : 'Con'} updated!`);
+      } else {
+        await addProsCons({
+          decisionId,
+          option: item.option,
+          type: item.type,
+          text,
+          rating,
+          source: 'user',
+        });
+        toast.success(`${item.type === 'pro' ? 'Pro' : 'Con'} saved!`);
+      }
       setIsEditing(false);
-      if (onUpdate) onUpdate(); // Trigger a refresh of the main list
+      if (onUpdate) onUpdate();
     } catch (error) {
       toast.error('Failed to save');
       console.error(error);
     }
   };
 
+  const handleDelete = async () => {
+    if (!item._id) return;
+    try {
+      await deleteProsCons(item._id);
+      toast.success(`${item.type === 'pro' ? 'Pro' : 'Con'} deleted`);
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      toast.error('Failed to delete');
+      console.error('Delete error:', error);
+    }
+  };
+
   const handleRatingChange = async (newRating) => {
     try {
       if (newRating === 1) {
-        // Delete the item if rating is 1
         await deleteProsCons(item._id);
         toast.success('Item removed (rated 1 star)');
-      } else {
-        // Update the rating
-        await updateProsCons(item._id, { rating: newRating });
-        toast.success('Rating updated');
+        if (onUpdate) onUpdate();
+        return;
       }
-      
+      await updateProsCons(item._id, { rating: newRating });
+      toast.success('Rating updated');
       setRating(newRating);
-      if (onRatingChange) {
-        onRatingChange(newRating);
-      }
+      if (onRatingChange) onRatingChange(newRating);
     } catch (error) {
       toast.error('Failed to update rating');
       console.error('Rating update error:', error);
@@ -93,7 +111,7 @@ export default function ProConCard({ item, decisionId, onUpdate, onRatingChange 
               <div className="flex items-center space-x-3">
                 {item.source === 'ai' && (
                   <span className="text-xs bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-medium">
-                    🤖 AI Generated
+                    AI Generated
                   </span>
                 )}
                 <div className="flex items-center space-x-2">
@@ -107,10 +125,20 @@ export default function ProConCard({ item, decisionId, onUpdate, onRatingChange 
               </div>
             </div>
           </div>
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end gap-4 mt-4">
+            {item._id && (
+              <button
+                onClick={handleDelete}
+                className="text-sm text-red-600 hover:text-red-800 font-medium"
+                type="button"
+              >
+                Delete
+              </button>
+            )}
             <button
               onClick={() => setIsEditing(true)}
               className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              type="button"
             >
               Edit
             </button>

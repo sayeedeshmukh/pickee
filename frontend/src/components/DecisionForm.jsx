@@ -77,7 +77,7 @@ export default function DecisionForm({ onDecisionCreated }) {
       }
     } catch (error) {
       toast.error('Failed to create decision');
-      console.error("🚨 Error creating decision:", error);
+      console.error("Error creating decision:", error);
     } finally {
       setIsSubmitting(false);
     }

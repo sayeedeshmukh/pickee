@@ -41,6 +41,13 @@ export const getGeminiSummary = async (decisionId) => {
   return res.data;
 };
 
+// Still Not Sure (mindset follow-up on Results page)
+export const submitStillNotSure = (decisionId, formData) =>
+  API.post(`/decisions/${decisionId}/still-not-sure`, formData);
+
+export const getStillNotSure = (decisionId) =>
+  API.get(`/decisions/${decisionId}/still-not-sure`);
+
 // Fetch user decision history
 export const getUserDecisionHistory = (token) => {
   return API.get('/decisions/user/history', {

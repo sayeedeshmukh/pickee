@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDecision, getDecisionAnalysis, getGeminiSummary } from '../services/api';
+import { getDecision, getDecisionAnalysis, getGeminiSummary, submitStillNotSure, getStillNotSure } from '../services/api';
 import { toast } from 'react-hot-toast';
 import Header from '../components/Header';
 import { requireClearText, UNCLEAR_INPUT_MESSAGE } from '../utils/inputValidation';
@@ -13,6 +13,7 @@ export default function Results() {
   const [geminiAnalysis, setGeminiAnalysis] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [loadingGeminiAnalysis, setLoadingGeminiAnalysis] = useState(false); 
+  const aiAnalysisRef = useRef(null);
   const isTie = !!(analysis && analysis.scores && analysis.scores.optionA === analysis.scores.optionB);
 
   useEffect(() => {
@@ -34,11 +35,24 @@ export default function Results() {
     fetchData();
   }, [decisionId]);
 
+  useEffect(() => {
+    if (geminiAnalysis && aiAnalysisRef.current) {
+      aiAnalysisRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [geminiAnalysis]);
+
   const generateGeminiSummary = async () => {
     setLoadingGeminiAnalysis(true);
     try {
-      const summaryRes = await getGeminiSummary(decisionId); 
-      setGeminiAnalysis(summaryRes); 
+      const summaryRes = await getGeminiSummary(decisionId);
+      const isFallback =
+        summaryRes?.recommendedOption === 'No recommendation available' ||
+        summaryRes?.summary === 'AI analysis could not be generated at this time.';
+      if (isFallback) {
+        toast.error('AI analysis could not be generated. Check backend logs and try again.');
+        return;
+      }
+      setGeminiAnalysis(summaryRes);
       toast.success('AI analysis generated successfully!');
     } catch (error) {
       console.error('Failed to generate Gemini analysis:', error);
@@ -110,7 +124,7 @@ export default function Results() {
                   <span>Generating AI Analysis...</span>
                 </div>
               ) : (
-                '🤖 Get AI Decision Analysis'
+                'Get AI Decision Analysis'
               )}
             </button>
           </div>
@@ -159,7 +173,10 @@ export default function Results() {
 
           {/* AI Analysis Results */}
           {geminiAnalysis && (
-            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-12 border border-white/20 shadow-2xl">
+            <div
+              ref={aiAnalysisRef}
+              className="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-12 border border-white/20 shadow-2xl scroll-mt-8"
+            >
               <div className="text-center mb-8">
                 <h2 className="text-4xl font-bold mb-4" style={{ color: '#fff7e4' }}>AI Decision Analysis</h2>
                 <p className="text-xl" style={{ color: '#fff7e4' }}>Powered by advanced AI insights</p>
@@ -199,18 +216,18 @@ export default function Results() {
 
               {/* Additional Insights */}
               <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 p-6 rounded-2xl border border-cyan-400/30">
-                <h3 className="text-2xl font-semibold mb-4" style={{ color: '#fff7e4' }}>💡 Key Insights</h3>
+                <h3 className="text-2xl font-semibold mb-4" style={{ color: '#fff7e4' }}>Key Insights</h3>
                 <div>
                   <h4 className="text-lg font-semibold mb-2" style={{ color: '#5de7ff' }}>Strengths</h4>
                   <ul className="space-y-2">
                     {geminiAnalysis.strengths ? geminiAnalysis.strengths.map((strength, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="text-cyan-400 mr-2">✓</span>
+                        <span className="text-cyan-400 mr-2">-</span>
                         <span style={{ color: '#fff7e4' }}>{strength}</span>
                       </li>
                     )) : (
                       <li className="flex items-start">
-                        <span className="text-cyan-400 mr-2">✓</span>
+                        <span className="text-cyan-400 mr-2">-</span>
                         <span style={{ color: '#fff7e4' }}>Strong alignment with your core values</span>
                       </li>
                     )}
@@ -221,7 +238,7 @@ export default function Results() {
           )}
 
           {/* Still Not Sure? Section */}
-          <StillNotSureSection analysis={analysis} decisionId={decisionId} />
+          <StillNotSureSection decision={decision} decisionId={decisionId} />
 
           {/* Navigation */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mt-16">
@@ -230,7 +247,7 @@ export default function Results() {
               className="px-8 py-4 text-lg font-medium transition-all duration-300 hover:scale-105"
               style={{ color: '#fff7e4' }}
             >
-              ← Back to Rating
+              Back to Rating
             </button>
             <button
               onClick={() => navigate('/')}
@@ -261,7 +278,7 @@ export default function Results() {
   );
 }
 
-function StillNotSureSection({ analysis }) {
+function StillNotSureSection({ decision, decisionId }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     feelings: '',
@@ -273,6 +290,29 @@ function StillNotSureSection({ analysis }) {
   });
   const [submitted, setSubmitted] = useState(false);
   const [advice, setAdvice] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!decisionId) return;
+    getStillNotSure(decisionId)
+      .then((res) => {
+        const data = res.data;
+        if (!data?.advice) return;
+        setForm({
+          feelings: data.feelings || '',
+          missingInfo: data.missingInfo || '',
+          confidence: String(data.confidence ?? ''),
+          helpNeeded: data.helpNeeded || '',
+          extra: data.extra || '',
+          userPreference: data.userPreference || '',
+        });
+        setAdvice(data.advice);
+        setSubmitted(true);
+      })
+      .catch(() => {
+        // No saved responses yet — expected on first visit
+      });
+  }, [decisionId]);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -297,14 +337,25 @@ function StillNotSureSection({ analysis }) {
       return;
     }
 
-    setSubmitted(true);
-    // Analyze the user's mindset based on their responses
-    let detected = 'Balanced';
-    if (/logic|practical|reason|rational|fact|objective|analysis|research|data/i.test(form.feelings + form.extra)) detected = 'Logical';
-    else if (/emotion|feel|gut|intuition|heart|subjective|love|hate|fear|anxiety|worry|stress/i.test(form.feelings + form.extra)) detected = 'Emotional';
-    else if (analysis?.emotionalVsPractical) detected = analysis.emotionalVsPractical;
-    setAdvice(getAdviceForMindset(detected, form));
-    // Remove the decision re-fetching logic - keep the original recommendation
+    setSubmitting(true);
+    try {
+      const res = await submitStillNotSure(decisionId, {
+        feelings: form.feelings.trim(),
+        missingInfo: form.missingInfo.trim(),
+        confidence: confidenceNum,
+        helpNeeded: form.helpNeeded.trim(),
+        extra: form.extra.trim(),
+        userPreference: form.userPreference,
+      });
+      setAdvice(res.data.advice);
+      setSubmitted(true);
+      toast.success('Advice tailored to your answers!');
+    } catch (error) {
+      console.error('Still Not Sure submit error:', error);
+      toast.error('Failed to get advice. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -398,16 +449,21 @@ function StillNotSureSection({ analysis }) {
                 style={{ color: '#fff7e4' }}
               >
                 <option value="" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>Select an option</option>
-                <option value="A" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>Option A</option>
-                <option value="B" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>Option B</option>
+                <option value="A" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>
+                  Option A — {decision?.optionA?.title || 'A'}
+                </option>
+                <option value="B" style={{ backgroundColor: '#1c2838', color: '#fff7e4' }}>
+                  Option B — {decision?.optionB?.title || 'B'}
+                </option>
               </select>
           </div>
           <button
             type="submit"
-            className="mt-6 px-8 py-4 text-xl font-bold rounded-full transform hover:scale-105 transition-all duration-300 shadow-2xl"
+            disabled={submitting}
+            className="mt-6 px-8 py-4 text-xl font-bold rounded-full transform hover:scale-105 transition-all duration-300 shadow-2xl disabled:opacity-50"
             style={{ backgroundColor: '#e98198', color: '#fff7e4' }}
           >
-            Submit
+            {submitting ? 'Analyzing your answers...' : 'Submit'}
           </button>
         </form>
       )}
@@ -419,60 +475,4 @@ function StillNotSureSection({ analysis }) {
       )}
     </div>
   );
-}
-
-function getAdviceForMindset(mindset, form) {
-  let advice = '';
-  
-  if (mindset === 'Logical' || mindset === 'Practical') {
-    advice = (
-      "🧠 You're thinking logically and practically. This is great for making well-reasoned decisions! Here's what this means:\n\n" +
-      "• You're focusing on facts, data, and practical outcomes\n" +
-      "• You're considering long-term consequences and feasibility\n" +
-      "• You're being objective and systematic in your approach\n\n" +
-      "💡 Advice: While logic is excellent, don't forget to check in with your feelings. Sometimes, your gut can reveal what you truly want. " +
-      "Try asking yourself: 'How do I feel when I imagine choosing each option?'\n\n" +
-      "If you need more information, try to list out what specific facts or data would help you decide."
-    );
-  } else if (mindset === 'Emotional') {
-    advice = (
-      "💖 You're thinking emotionally and intuitively. This is completely valid and important! Here's what this means:\n\n" +
-      "• You're listening to your feelings and gut instincts\n" +
-      "• You're considering how choices will affect your emotional well-being\n" +
-      "• You're being true to your values and what matters to you\n\n" +
-      "💡 Advice: Your emotions are valuable guides, but also consider if there are practical factors you might be overlooking. " +
-      "Try writing down what information would help you feel more confident. A balance of heart and mind often leads to the best decisions.\n\n" +
-      "If you're feeling emotionally unstable or overwhelmed, consider taking a step back and giving yourself time to process."
-    );
-  } else {
-    advice = (
-      "⚖️ Your mindset seems balanced between logic and emotion. This is ideal for decision-making! Here's what this means:\n\n" +
-      "• You're considering both facts and feelings\n" +
-      "• You're being thoughtful and comprehensive in your approach\n" +
-      "• You're likely to make well-rounded decisions\n\n" +
-      "💡 Advice: If you're still unsure, try imagining yourself having chosen each option—how do you feel? " +
-      "Sometimes, picturing the outcome can help clarify your true preference.\n\n" +
-      `You said your confidence is ${form.confidence}/10. If it's low, think about what would help you feel more certain: ${form.helpNeeded || 'try talking to someone you trust or doing more research.'}`
-    );
-  }
-
-  // Check for emotional instability only if user is clearly leaning towards emotional decision-making
-  const emotionalDecisionKeywords = /love|hate|heart|gut feeling|intuition|feels right|feels wrong|emotional attachment|passion|desire/i;
-  const emotionalInstabilityKeywords = /anxious|worried|stressed|overwhelmed|confused|fear|panic|doubt|uncertain|emotional instability|emotional breakdown/i;
-  
-  // Only show emotional guidance if they're making decisions based on emotions AND showing signs of instability
-  if (emotionalDecisionKeywords.test(form.feelings + form.extra) && emotionalInstabilityKeywords.test(form.feelings + form.extra)) {
-    advice += "\n\n🚨 Emotional Decision-Making Alert:\n\n" +
-      "It sounds like you might be making this decision primarily based on emotions, and you're experiencing some emotional instability. " +
-      "While your feelings are important, emotional instability can cloud judgment and lead to decisions you might regret later.\n\n" +
-      "💡 When making emotional decisions during unstable times, consider:\n" +
-      "• Taking a step back and giving yourself time to process\n" +
-      "• Focusing on the facts and practical outcomes\n" +
-      "• Considering what you would advise a friend in the same situation\n" +
-      "• Looking at the long-term consequences rather than immediate feelings\n\n" +
-      "Remember: Your feelings are valid, but they don't always lead to the best decisions. " +
-      "The logical choice is usually the one that aligns with your long-term goals and values, not just your current emotional state.";
-  }
-
-  return advice;
 }

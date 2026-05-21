@@ -21,7 +21,7 @@ export default function Header() {
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle navigation menu"
             >
-              ☰
+              Menu
             </button>
           </div>
           {/* Desktop menu */}
@@ -40,7 +40,7 @@ export default function Header() {
                   style={{ background: '#5de7ff', color: '#fff7e4', borderColor: '#e98198' }}
                   onClick={() => navigate('/profile')}
                 >
-                  <span role="img" aria-label="profile">👤</span>
+                  <span aria-hidden="true">P</span>
                 </button>
                 <button
                   className="ml-4 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
@@ -92,7 +92,7 @@ export default function Header() {
               onClick={() => setMenuOpen(false)}
               aria-label="Close menu"
             >
-              ✕
+              Close
             </button>
           </div>
 
@@ -124,7 +124,7 @@ export default function Header() {
                     style={{ background: '#5de7ff', color: '#1c2838' }}
                     onClick={() => { setMenuOpen(false); navigate('/profile'); }}
                   >
-                    <span role="img" aria-label="profile">👤</span>
+                    <span aria-hidden="true">P</span>
                     <span>Profile</span>
                   </button>
                   <button

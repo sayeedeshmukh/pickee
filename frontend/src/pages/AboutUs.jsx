@@ -46,7 +46,6 @@ export default function AboutUs() {
             <div className="mb-16 max-w-6xl mx-auto">
               <div className="grid md:grid-cols-3 gap-8">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
-                  <div className="text-4xl mb-4">🤔</div>
                   <h3 className="text-2xl font-bold mb-4" style={{ color: '#5de7ff' }}>
                     Break Down Decisions
                   </h3>
@@ -55,7 +54,6 @@ export default function AboutUs() {
                   </p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
-                  <div className="text-4xl mb-4">🧠</div>
                   <h3 className="text-2xl font-bold mb-4" style={{ color: '#5de7ff' }}>
                     AI-Powered Analysis
                   </h3>
@@ -64,7 +62,6 @@ export default function AboutUs() {
                   </p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
-                  <div className="text-4xl mb-4">💡</div>
                   <h3 className="text-2xl font-bold mb-4" style={{ color: '#5de7ff' }}>
                     Personal Growth
                   </h3>

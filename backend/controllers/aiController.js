@@ -73,19 +73,22 @@ const getGeminiProsCons = async (req, res) => {
       });
     }
     
-    // Save all AI suggestions to database
-    const allTexts = prosConsToSave.map(item => item.text || '').join(' ');
-    if (
-      prosConsToSave.length > 0 &&
-      !allTexts.includes("AI couldn't come up")
-    ) {
+    // Save all AI suggestions to database.
+    // Important: do not skip insert when Gemini failed and returned fallback text.
+    // Previously we skipped if any text contained "AI couldn't come up", which left
+    // the DB empty and the /rate page showed "No pros yet" with no way to recover.
+    let savedCount = 0;
+    if (prosConsToSave.length > 0) {
       await ProsCons.insertMany(prosConsToSave);
-      console.log(`Saved ${prosConsToSave.length} AI suggestions to database`);
+      savedCount = prosConsToSave.length;
+      console.log(`Saved ${savedCount} AI suggestions to database`);
     }
     
     res.json({ 
       success: true, 
-      message: `Generated and saved ${prosConsToSave.length} AI suggestions`,
+      message: savedCount > 0
+        ? `Generated and saved ${savedCount} AI suggestions`
+        : 'Generated AI suggestions (not saved)',
       suggestions 
     });
   } catch (error) {

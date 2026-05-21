@@ -12,14 +12,29 @@ const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
-  "http://localhost:5173", // for local dev (Vite default)
-  "https://oricaa.netlify.app" 
+  'https://oricaa.netlify.app',
+  '*',  
+
 ];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // server-to-server / curl / same-origin
+  if (allowedOrigins.includes(origin)) return true;
+  // Local dev: allow any Vite port
+  if (/^http:\/\/localhost:\d+$/.test(origin)) return true;
+  if (/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) return true;
+  return false;
+}
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (isAllowedOrigin(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
 
 // Root Route
@@ -27,20 +42,41 @@ app.get('/', (req, res) => {
   res.send('Welcome to Pickee API!');
 });
 
-// MongoDB Connection (updated - no deprecated options)
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    const PORT = process.env.PORT || 5000;
-
+// Start server first so we can surface useful errors even if DB is down.
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-  })
-  .catch((err) => {
-    console.error('MongoDB connection failed:', err.message);
-  });
+async function connectMongoWithFallback() {
+  const primary = process.env.MONGO_URI;
+  const fallback = process.env.MONGO_URI_FALLBACK || 'mongodb://127.0.0.1:27017/oricaDB';
+
+  const candidates = [primary, fallback].filter(Boolean);
+  if (candidates.length === 0) {
+    console.error('MongoDB connection failed: MONGO_URI is not set.');
+    return;
+  }
+
+  let lastErr;
+  for (const uri of candidates) {
+    try {
+      await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 8000,
+      });
+      console.log('Connected to MongoDB');
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.error('MongoDB connection failed:', err?.message || String(err));
+    }
+  }
+  if (lastErr) {
+    console.error('MongoDB connection failed (all candidates exhausted).');
+  }
+}
+
+connectMongoWithFallback();
 
 // Routes
 const decisionRoutes = require('./routes/decisionRoutes');

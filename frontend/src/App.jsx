@@ -12,7 +12,7 @@ import { Toaster } from 'react-hot-toast';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-900">
         <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<Home />} />
