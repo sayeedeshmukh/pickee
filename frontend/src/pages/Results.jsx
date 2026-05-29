@@ -214,26 +214,6 @@ export default function Results() {
                 </div>
               </div>
 
-              {/* Additional Insights */}
-              <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 p-6 rounded-2xl border border-cyan-400/30">
-                <h3 className="text-2xl font-semibold mb-4" style={{ color: '#fff7e4' }}>Key Insights</h3>
-                <div>
-                  <h4 className="text-lg font-semibold mb-2" style={{ color: '#5de7ff' }}>Strengths</h4>
-                  <ul className="space-y-2">
-                    {geminiAnalysis.strengths ? geminiAnalysis.strengths.map((strength, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-cyan-400 mr-2">-</span>
-                        <span style={{ color: '#fff7e4' }}>{strength}</span>
-                      </li>
-                    )) : (
-                      <li className="flex items-start">
-                        <span className="text-cyan-400 mr-2">-</span>
-                        <span style={{ color: '#fff7e4' }}>Strong alignment with your core values</span>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </div>
             </div>
           )}
 
