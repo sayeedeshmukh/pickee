@@ -39,7 +39,7 @@ app.use(
 
 // Root Route
 app.get('/', (req, res) => {
-  res.send('Welcome to Pickee API!');
+  res.send('Welcome to Orica API!');
 });
 
 // Start server first so we can surface useful errors even if DB is down.

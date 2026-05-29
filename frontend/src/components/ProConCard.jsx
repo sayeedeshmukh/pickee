@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Rating from './Rating';
 import { addProsCons, updateProsCons, deleteProsCons } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { requireClearText, isVagueText } from '../utils/inputValidation';
 
 export default function ProConCard({ item, decisionId, onUpdate, onRatingChange }) {
   const [rating, setRating] = useState(item.rating || 5);
@@ -9,6 +10,13 @@ export default function ProConCard({ item, decisionId, onUpdate, onRatingChange 
   const [text, setText] = useState(item.text || '');
 
   const handleSave = async () => {
+    if (isVagueText(text)) {
+      toast.error('Please write something specific to your situation.');
+      return;
+    }
+    if (!requireClearText(text, { minChars: 4, onError: (m) => toast.error(m) })) {
+      return;
+    }
     try {
       if (item._id) {
         // Edit existing row (including AI-generated): update in place, mark as user-authored

@@ -5,7 +5,7 @@ import ProConCard from '../components/ProConCard';
 import Rating from '../components/Rating';
 import { getDecision, getProsConsByDecision, addProsCons, updateProsCons } from '../services/api';
 import Header from '../components/Header';
-import { requireClearText } from '../utils/inputValidation';
+import { requireClearText, getDecisionDisplayTitle, isVagueText } from '../utils/inputValidation';
 
 export default function RateReason() {
   const { id: decisionId } = useParams();
@@ -37,11 +37,25 @@ export default function RateReason() {
   }, [decisionId]);
 
   const handleAddNew = async () => {
+    if (isVagueText(newItem.text)) {
+      toast.error('Be specific — vague points skew your results.');
+      return;
+    }
     const ok = requireClearText(newItem.text, {
       minChars: 4,
       onError: (msg) => toast.error(msg),
     });
-    if (!ok) {
+    if (!ok) return;
+
+    const normalized = newItem.text.trim().toLowerCase();
+    const duplicate = prosCons.some(
+      (p) =>
+        p.option === newItem.option &&
+        p.type === newItem.type &&
+        p.text.trim().toLowerCase() === normalized
+    );
+    if (duplicate) {
+      toast.error('You already have a similar point — edit it instead.');
       return;
     }
     setIsSubmitting(true);
@@ -116,8 +130,7 @@ export default function RateReason() {
       <Header />
       <div className="max-w-7xl mx-auto px-2 md:px-4 pb-10 md:pb-16">
         <header className="mb-6 md:mb-10 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 font-['Limelight','sans-serif']">{decision.title}</h1>
-          <p className="text-lg md:text-xl text-[#FFF7E2] font-['Lexend_Deca','sans-serif']">Rate the pros and cons for each option to help make your decision</p>
+          <p className="text-lg md:text-xl text-[#FFF7E2] font-['Lexend_Deca','sans-serif']">Rate importance of each option</p>
         </header>
 
         {/* Responsive Side-by-side options */}
@@ -197,7 +210,7 @@ export default function RateReason() {
             onClick={() => navigate(`/decisions/${decisionId}/results`)}
             className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 text-lg shadow-lg w-full md:w-auto"
           >
-            View Results
+            See results →
           </button>
         </div>
       </div>

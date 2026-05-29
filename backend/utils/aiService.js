@@ -1,4 +1,6 @@
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
+const { computeWeightedScores } = require('./scoring');
+const { formatMindsetForPrompt } = require('./formatMindset');
 require('dotenv').config();
 
 
@@ -176,32 +178,27 @@ function balanceCurlyBraces(jsonLike) {
 
 async function generateProsCons(optionA, optionB) {
   try {
-    const prompt = `You are helping someone compare two options head-to-head. Generate exactly 3 pros and 3 cons for EACH option, but every item must be RELATIVE TO THE OTHER OPTION — not standalone facts.
+    const prompt = `You are a thoughtful friend helping someone make a real-life choice — not a corporate analyst. Generate exactly 3 pros and 3 cons for EACH option. Every item must compare the two options (relative), and should feel emotionally honest, not generic.
 
 Option A: "${optionA}"
 Option B: "${optionB}"
 
-Meaning of each list:
-- optionA.pros = ways "${optionA}" is BETTER than "${optionB}" (advantages of A vs B)
-- optionA.cons = ways "${optionA}" is WORSE than "${optionB}" (trade-offs or downsides of A vs B)
-- optionB.pros = ways "${optionB}" is BETTER than "${optionA}"
-- optionB.cons = ways "${optionB}" is WORSE than "${optionA}"
+Lists:
+- optionA.pros = ways A is better than B (include practical AND emotional upsides)
+- optionA.cons = real trade-offs or worries if they pick A over B (not catastrophizing)
+- optionB.pros / optionB.cons = same for B vs A
 
-Return ONLY valid JSON (no markdown, no extra text).
-Constraints for every array item:
-- must be a short single-line comparative string (no newline characters)
-- max 100 characters
-- must clearly compare the two options (use "than", "compared to", "vs", "unlike", or mention the other option by name)
-- BAD (standalone): "Lower rent", "Good weather", "Friends nearby"
-- GOOD (comparative): "Lower rent than staying in ${optionB}", "Warmer climate than ${optionB}", "Closer to family than ${optionA}"
+Return ONLY valid JSON (no markdown).
+Each item:
+- single line, max 100 characters, no newlines
+- must compare (use "than", "vs", "compared to", or name the other option)
+- specific to THESE options — no filler like "good opportunity" or "might regret it"
+- capture nuance: identity, relationships, stress, pride, peace of mind where relevant
+- BAD: "Lower rent", "Nice place", "Could be better"
+- GOOD: "Rent leaves more room to save than ${optionB}", "You'd miss your people near ${optionB} if you pick A"
 
-Requirements:
-- Be specific to these two options — not generic life advice
-- Use casual, friendly language like a thoughtful friend
-- Each point must make sense only in the context of choosing between A and B
-- Do not duplicate the same idea across pros and cons or across A and B
-- optionA items should reference or imply "${optionB}" where natural; optionB items should reference "${optionA}"
-- Format as valid JSON exactly like this:
+Do NOT repeat the same idea as both a pro and a con. Do NOT copy the same sentence across A and B.
+Format as valid JSON exactly like this:
 {
   "optionA": { 
     "pros": ["comparative pro vs B 1", "comparative pro vs B 2", "comparative pro vs B 3"],
@@ -218,7 +215,7 @@ Requirements:
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: prosConsResponseSchema,
-        temperature: 0.35,
+        temperature: 0.45,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 1400,
@@ -274,12 +271,7 @@ Requirements:
 }
 
 function computeOptionScores(prosConsData) {
-  const scoreA = prosConsData
-    .filter((pc) => pc.option === 'A')
-    .reduce((sum, pc) => sum + (pc.rating || 0), 0);
-  const scoreB = prosConsData
-    .filter((pc) => pc.option === 'B')
-    .reduce((sum, pc) => sum + (pc.rating || 0), 0);
+  const { scoreA, scoreB } = computeWeightedScores(prosConsData);
   return { scoreA, scoreB };
 }
 
@@ -371,12 +363,14 @@ async function generateEfficientChoice(decisionData, prosConsData, mindsetData) 
   const { scoreA, scoreB } = computeOptionScores(prosConsData);
   const { winner, loser, isTie } = resolveWinnerFromScores(scoreA, scoreB, titleA, titleB);
 
+  const mindsetBlock = formatMindsetForPrompt(mindsetData);
+
   const scoreInstruction = isTie
-    ? `SCORING (authoritative): "${titleA}" = ${scoreA}, "${titleB}" = ${scoreB} — TIED. Explain the tie fairly; do not pick a single winner.`
-    : `SCORING (authoritative): "${titleA}" = ${scoreA}, "${titleB}" = ${scoreB}. The user-rated winner is "${winner}". You MUST recommend exactly "${winner}". strengths = why "${winner}" wins vs "${loser}" (pros/advantages only). considerations = trade-offs/risks of "${winner}" vs "${loser}" (cons only).`;
+    ? `SCORES (authoritative, linear: each star = 1 point, pros add / cons subtract): "${titleA}" = ${scoreA}, "${titleB}" = ${scoreB} — TIED. Explain the tie with empathy; do not declare a single winner.`
+    : `SCORES (authoritative, linear: each star = 1 point, pros add / cons subtract): "${titleA}" = ${scoreA}, "${titleB}" = ${scoreB}. Winner by net points: "${winner}". recommendedOption must be exactly "${winner}".`;
 
   try {
-    const prompt = `Analyze this head-to-head decision. Each pro/con compares one option against the other (relative advantages/trade-offs), not standalone facts.
+    const prompt = `You are ORICA — a warm, emotionally intelligent decision guide. Help someone understand their choice between two options. Never sound like a corporate report or give fake certainty.
 
 ${scoreInstruction}
 
@@ -387,23 +381,23 @@ ${formatProsConsForPrompt(prosConsData, 'A', 'pro', titleB)}
 ${formatProsConsForPrompt(prosConsData, 'A', 'con', titleB)}
 ${formatProsConsForPrompt(prosConsData, 'B', 'pro', titleA)}
 ${formatProsConsForPrompt(prosConsData, 'B', 'con', titleA)}
-${mindsetData ? `Mindset: ${mindsetData.description}` : ''}
+${mindsetBlock ? `\nHow they feel about this decision:\n${mindsetBlock}\n` : ''}
 
 Return ONLY valid JSON.
+summary: 3–5 sentences. Explain WHY the recommended option fits (or why it's tied). Name emotional conflict if mindset suggests it. Mention tradeoffs honestly. Use "might", "could", "leans toward" — not "definitely" or "the only right choice".
 ${isTie
     ? `recommendedOption must acknowledge the tie between "${titleA}" and "${titleB}".`
     : `recommendedOption must be exactly "${winner}".`}
-strengths = ONLY advantages/pros for why the recommended option beats the other (comparative, positive).
-considerations = ONLY trade-offs/cons/risks for the recommended option vs the other (comparative, cautious).
-Do NOT put pros in considerations or cons in strengths.
-Each strengths/considerations item: single line, max 120 characters.`;
+strengths = 2–4 comparative advantages for the recommended side (not generic praise).
+considerations = 2–4 honest trade-offs/risks for the recommended side (what they might grieve or worry about).
+Do NOT swap pros into considerations. Each item: one line, max 120 characters.`;
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: decisionAnalysisResponseSchema,
-        temperature: 0.35,
+        temperature: 0.45,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 1400,

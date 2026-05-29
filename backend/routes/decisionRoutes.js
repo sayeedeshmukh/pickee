@@ -4,6 +4,7 @@ const router = express.Router();
 const { createDecision, getDecision, getUserDecisions } = require('../controllers/decisionController');
 const { getDecisionAnalysis } = require('../controllers/analysisController');
 const { getStillNotSure, submitStillNotSure } = require('../controllers/stillNotSureController');
+const { submitMindset, getMindset } = require('../controllers/mindsetController');
 const auth = require('../middlewares/auth');
 
 // Create decision (auth optional)
@@ -16,6 +17,8 @@ router.get('/user/history', auth, getUserDecisions);
 router.get('/:id/analysis', getDecisionAnalysis);
 router.get('/:id/still-not-sure', getStillNotSure);
 router.post('/:id/still-not-sure', submitStillNotSure);
+router.get('/:id/mindset', getMindset);
+router.post('/:id/mindset', submitMindset);
 
 // Fetch a decision by id (keep last, it's the most generic)
 router.get('/:id', getDecision);

@@ -1,6 +1,8 @@
 const { generateProsCons, generateEfficientChoice } = require('../utils/aiService');
-const Decision = require('../models/Decision'); 
-const ProsCons = require('../models/ProsCons'); 
+const Decision = require('../models/Decision');
+const ProsCons = require('../models/ProsCons');
+const Mindset = require('../models/Mindset');
+const { dedupeProsCons } = require('../utils/scoring');
 
 // This controller will handle the request for generating initial pros/cons and save them to DB
 const getGeminiProsCons = async (req, res) => {
@@ -11,10 +13,11 @@ const getGeminiProsCons = async (req, res) => {
   }
 
   try {
+    await ProsCons.deleteMany({ decisionId, source: 'ai' });
+
     const suggestions = await generateProsCons(optionA, optionB);
     console.log('Generated AI suggestions:', JSON.stringify(suggestions, null, 2));
-    
-    // Save AI suggestions to database
+
     const prosConsToSave = [];
     
     // Save Option A pros
@@ -73,14 +76,12 @@ const getGeminiProsCons = async (req, res) => {
       });
     }
     
-    // Save all AI suggestions to database.
-    // Important: do not skip insert when Gemini failed and returned fallback text.
-    // Previously we skipped if any text contained "AI couldn't come up", which left
-    // the DB empty and the /rate page showed "No pros yet" with no way to recover.
+    const uniqueToSave = dedupeProsCons(prosConsToSave);
+
     let savedCount = 0;
-    if (prosConsToSave.length > 0) {
-      await ProsCons.insertMany(prosConsToSave);
-      savedCount = prosConsToSave.length;
+    if (uniqueToSave.length > 0) {
+      await ProsCons.insertMany(uniqueToSave);
+      savedCount = uniqueToSave.length;
       console.log(`Saved ${savedCount} AI suggestions to database`);
     }
     
@@ -106,13 +107,16 @@ const getGeminiDecisionAnalysis = async (req, res) => {
       return res.status(404).json({ error: 'Decision not found.' });
     }
 
-    const prosCons = await ProsCons.find({ decisionId });
+    const [prosCons, mindset] = await Promise.all([
+      ProsCons.find({ decisionId }),
+      Mindset.findOne({ decisionId }),
+    ]);
 
     if (!prosCons || prosCons.length === 0) {
       return res.status(400).json({ error: 'No pros and cons found for this decision. Please add some first.' });
     }
 
-    const analysis = await generateEfficientChoice(decision, prosCons, null);
+    const analysis = await generateEfficientChoice(decision, prosCons, mindset);
     res.json(analysis);
 
   } catch (error) {

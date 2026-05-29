@@ -6,6 +6,7 @@ import Results from './pages/Results';
 import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
 import AboutUs from './pages/AboutUs';
+import MindsetRedirect from './pages/MindsetRedirect';
 import Profile from './pages/Profile';
 import { Toaster } from 'react-hot-toast';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/decisions/create" element={<CreateDecision />} />
           <Route path="/decisions/:id/rate" element={<RateReason />} />
+          <Route path="/decisions/:id/mindset" element={<MindsetRedirect />} />
           <Route path="/decisions/:id/results" element={<Results />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />

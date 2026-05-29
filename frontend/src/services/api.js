@@ -20,11 +20,12 @@ export const updateProsCons = (id, updateData) => API.put(`/proscons/${id}`, upd
 export const deleteProsCons = (id) => API.delete(`/proscons/${id}`);
 
 // Analysis (Existing, but check its implementation in your backend analysisController.js)
-export const getDecisionAnalysis = (decisionId, userPreference) => {
-  if (userPreference) {
-    return API.get(`/decisions/${decisionId}/analysis?userPreference=${userPreference}`);
-  }
-  return API.get(`/decisions/${decisionId}/analysis`);
+export const getDecisionAnalysis = (decisionId, { userPreference, includeMindset } = {}) => {
+  const params = new URLSearchParams();
+  if (userPreference) params.set('userPreference', userPreference);
+  if (includeMindset) params.set('includeMindset', 'true');
+  const qs = params.toString();
+  return API.get(`/decisions/${decisionId}/analysis${qs ? `?${qs}` : ''}`);
 };
 
 // --- Gemini API Integrations ---
@@ -47,6 +48,13 @@ export const submitStillNotSure = (decisionId, formData) =>
 
 export const getStillNotSure = (decisionId) =>
   API.get(`/decisions/${decisionId}/still-not-sure`);
+
+// Mindset reflection (between rating and results)
+export const submitMindset = (decisionId, formData) =>
+  API.post(`/decisions/${decisionId}/mindset`, formData);
+
+export const getMindset = (decisionId) =>
+  API.get(`/decisions/${decisionId}/mindset`);
 
 // Fetch user decision history
 export const getUserDecisionHistory = (token) => {

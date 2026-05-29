@@ -1,17 +1,38 @@
 const mongoose = require('mongoose');
 
-const mindsetSchema = new mongoose.Schema({
-  decisionId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Decision',
-    required: true,
+const mindsetSchema = new mongoose.Schema(
+  {
+    decisionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Decision',
+      required: true,
+      unique: true,
+    },
+    primaryDriver: {
+      type: String,
+      enum: ['fear', 'desire', 'both'],
+    },
+    thinkingStyle: {
+      type: String,
+      enum: ['logic', 'emotion', 'mixed'],
+    },
+    longTermOutlook: {
+      type: String,
+      enum: ['aligned', 'uncertain', 'misaligned'],
+    },
+    externalPressure: {
+      type: String,
+      enum: ['none', 'some', 'heavy'],
+    },
+    valuesThatMatter: String,
+    fearIfWrong: String,
+    hopeIfRight: String,
+    whoIsInfluencing: String,
+    innerConflict: String,
+    anythingElse: String,
+    gutLean: { type: String, enum: ['A', 'B', 'unsure'] },
   },
-  clarityLevel: String,         // e.g. "Clear", "Confused"
-  fearOfRegret: String,         // e.g. "High", "Low"
-  emotionalAttachment: String, // e.g. "Strong", "None"
-  longTermThinking: String,     // e.g. "Yes", "No"
-  practicalApproach: String,    // e.g. "Always", "Sometimes"
-  notes: String,                // optional thoughts by user
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Mindset', mindsetSchema);
